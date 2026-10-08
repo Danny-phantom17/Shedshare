@@ -26,6 +26,26 @@ const MAX_VIDEO_MB = 20; // demo-only cap — see the Video note in BACKEND_PROM
 const ADMIN_EMAIL = "admin@shedshare.app"; // mock only: sign in with this email to preview the admin dashboard
 const AGREEMENT_VERSION = "v1";
 
+/* ---------- appearance ---------- */
+const themeNames = { warm: "Warm", light: "Bright", dark: "Black" };
+const themeOrder = ["warm", "light", "dark"];
+const savedTheme = localStorage.getItem("shedshare_theme");
+document.documentElement.dataset.theme = themeNames[savedTheme] ? savedTheme : "warm";
+const themeToggle = document.getElementById("themeToggle");
+function syncThemeButton() {
+  const theme = document.documentElement.dataset.theme;
+  themeToggle.textContent = `Theme: ${themeNames[theme]}`;
+  themeToggle.setAttribute("aria-label", `Current theme: ${themeNames[theme]}. Tap to change theme.`);
+}
+syncThemeButton();
+themeToggle.addEventListener("click", () => {
+  const current = themeOrder.indexOf(document.documentElement.dataset.theme);
+  const nextTheme = themeOrder[(current + 1) % themeOrder.length];
+  document.documentElement.dataset.theme = nextTheme;
+  localStorage.setItem("shedshare_theme", nextTheme);
+  syncThemeButton();
+});
+
 // The no-backend demo must never present itself as a real payment flow.
 
 // From Google Cloud Console → APIs & Services → Credentials → OAuth client ID
