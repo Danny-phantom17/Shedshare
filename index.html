@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ShedShare</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">Shed<span>Share</span></div>
+    <div class="session" id="sessionBox"></div>
+  </header>
+
+  <div class="panel" id="authPanel" hidden>
+    <div class="authTabs">
+      <button type="button" data-authtab="login" aria-current="true">Sign in</button>
+      <button type="button" data-authtab="signup">Create account</button>
+    </div>
+    <form id="loginForm" class="authForm">
+      <label for="li-email">Email</label>
+      <input type="email" id="li-email" required>
+      <label for="li-pass">Password</label>
+      <input type="password" id="li-pass" required>
+      <button class="primary" type="submit">Sign in</button>
+      <button class="btn-outline" type="button" id="resendVerification">Resend verification email</button>
+    </form>
+    <form id="signupForm" class="authForm" hidden>
+      <label for="su-name">Full name</label>
+      <input type="text" id="su-name" required>
+      <label for="su-phone">Phone number</label>
+      <input type="text" inputmode="tel" id="su-phone" required placeholder="080...">
+      <label for="su-brand">Business / brand name <span class="sub-hint">(optional)</span></label>
+      <input type="text" id="su-brand" placeholder="e.g. Ade's Car Rentals">
+      <label for="su-bank">Payout bank name</label>
+      <input type="text" id="su-bank" required placeholder="e.g. GTBank">
+      <label for="su-bankacct">Payout account number</label>
+      <input type="text" inputmode="numeric" id="su-bankacct" required placeholder="0123456789">
+      <label for="su-email">Email</label>
+      <input type="email" id="su-email" required>
+      <label for="su-pass">Password</label>
+      <input type="password" id="su-pass" required>
+      <button class="primary" type="submit">Create account</button>
+    </form>
+  </div>
+
+  <nav>
+    <button data-tab="browse" aria-current="true">Browse</button>
+    <button data-tab="post">Post an item</button>
+    <button data-tab="dashboard">Dashboard</button>
+  </nav>
+
+  <section id="browse" aria-current="true">
+    <div class="hero">
+      <h1>Rent what you need. Share what you own.</h1>
+      <p class="tagline">Tools, vehicles, event gear, furniture and more — from people near you.
+        <button type="button" id="listCta" class="link-btn">List an item</button>
+      </p>
+    </div>
+
+    <div class="searchbar">
+      <input type="text" id="q-search" placeholder="What are you looking for?">
+      <input type="text" id="q-location" placeholder="Where?">
+    </div>
+    <div class="row2 filters">
+      <select id="q-cat"></select>
+      <input type="text" inputmode="numeric" id="q-maxprice" placeholder="Max price per unit (₦)">
+    </div>
+    <div class="cat-pills" id="catPills"></div>
+
+    <div class="grid" id="itemGrid"></div>
+  </section>
+
+  <section id="post">
+    <h1 id="postTitle">Post an item for rent</h1>
+    <button type="button" class="back" id="cancelEdit" hidden>Cancel editing</button>
+    <form class="panel" id="itemForm">
+      <label for="i-name">Item name</label>
+      <input type="text" id="i-name" required placeholder="Cordless drill">
+      <label for="i-image">Photo</label>
+      <input type="file" id="i-image" accept="image/*">
+      <div id="imagePreviewWrap" style="display:none;">
+        <img id="imagePreview" class="detail-photo" alt="Preview">
+      </div>
+      <label for="i-video">Video <span class="sub-hint">(optional, max 20MB, keep it short)</span></label>
+      <input type="file" id="i-video" accept="video/*">
+      <div id="videoPreviewWrap" style="display:none;">
+        <video id="videoPreview" class="detail-video" controls></video>
+      </div>
+      <div class="row2">
+        <div>
+          <label for="i-cat">Category</label>
+          <select id="i-cat"></select>
+        </div>
+        <div>
+          <label for="i-cond">Condition</label>
+          <select id="i-cond">
+            <option>Like new</option>
+            <option>Good</option>
+            <option>Well used</option>
+          </select>
+        </div>
+      </div>
+      <label for="i-loc">Location (city / area)</label>
+      <input type="text" id="i-loc" required placeholder="Uyo, Akwa Ibom">
+      <label for="i-desc">Description</label>
+      <textarea id="i-desc" placeholder="What it is, what's included, pickup details."></textarea>
+
+      <div class="row2">
+        <div>
+          <label for="i-price">Price</label>
+          <input type="text" inputmode="numeric" id="i-price" placeholder="3000" required>
+        </div>
+        <div>
+          <label for="i-unit">Per</label>
+          <select id="i-unit">
+            <option value="hour">Hour</option>
+            <option value="day" selected>Day</option>
+            <option value="week">Week</option>
+          </select>
+        </div>
+      </div>
+      <div class="row2">
+        <div>
+          <label for="i-minp">Min rental period</label>
+          <input type="number" id="i-minp" min="1" value="1">
+        </div>
+        <div>
+          <label for="i-maxp">Max rental period</label>
+          <input type="number" id="i-maxp" min="1" value="14">
+        </div>
+      </div>
+      <label for="i-deposit">Deposit (₦, optional — refunded by you on safe return)</label>
+      <input type="text" inputmode="numeric" id="i-deposit" placeholder="0">
+      <p class="fine" id="depositHint"></p>
+
+      <label>Delivery</label>
+      <div class="terms-box">Coming soon — every listing is pickup only for now.</div>
+
+      <div class="split-preview" id="splitPreview"></div>
+
+      <button class="primary" type="submit" id="itemSubmit">Post item</button>
+    </form>
+  </section>
+
+  <section id="rentFlow">
+    <button type="button" class="back" id="rentBack">← Back to browse</button>
+    <div class="panel" id="rentDetail"></div>
+  </section>
+
+  <section id="dashboard">
+    <h1>Dashboard</h1>
+    <div class="panel" id="payoutSetup" hidden>
+      <h2 class="subhead">Connect your payout account</h2>
+      <p class="fine">Paystack will verify the bank account before it can receive rental payments.</p>
+      <button class="primary" type="button" id="setupPayout">Verify and connect payout account</button>
+    </div>
+    <h2 class="subhead">My listings</h2>
+    <div id="listingsList"></div>
+    <div class="empty" id="listingsEmpty" hidden>You haven't posted anything yet.</div>
+
+    <h2 class="subhead">My rentals</h2>
+    <div id="rentalsList"></div>
+    <div class="empty" id="rentalsEmpty" hidden>You haven't rented anything yet.</div>
+
+    <div id="adminSection" hidden>
+      <h2 class="subhead">All transactions <span class="admin-tag">admin view</span></h2>
+      <div class="split-preview" id="adminSummary"></div>
+      <div id="allTxList" style="margin-top:0.6rem;"></div>
+
+      <h2 class="subhead">Delivery partners <span class="admin-tag">mock</span></h2>
+      <div class="row-card"><div class="top"><strong>Emeka Logistics</strong><span class="status confirmed">Available</span></div></div>
+      <div class="row-card"><div class="top"><strong>QuickDash Riders</strong><span class="status busy">Busy</span></div></div>
+    </div>
+  </section>
+</div>
+<div class="lightbox" id="lightbox" hidden>
+  <button type="button" class="lightbox-close" id="lightboxClose" aria-label="Close">×</button>
+  <div class="lightbox-inner" id="lightboxInner"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="script.js" defer></script>
+</body>
+</html>
