@@ -4,93 +4,188 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ShedShare</title>
+<meta name="theme-color" content="#10213b">
+<meta name="description" content="Find useful things to rent nearby, or share what you own with ShedShare.">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" nonce="__CSP_NONCE__" defer></script>
+<link rel="stylesheet" href="style.css?v=welcome-tour-16" nonce="__CSP_NONCE__">
 </head>
 <body>
 <div class="wrap">
   <header>
     <div class="brand">Shed<span>Share</span></div>
     <div class="header-actions">
-      <button type="button" id="themeToggle" class="theme-toggle" aria-label="Change color theme">Theme: Warm</button>
+      <button type="button" class="install-app-cta" id="installAppButton" hidden><span aria-hidden="true">⇩</span><span class="install-label-wide">Download app</span><span class="install-label-compact">Get app</span></button>
+      <button type="button" id="headerSignIn" class="header-sign-in" aria-controls="authPanel">Sign in</button>
+      <button type="button" id="themeToggle" class="theme-toggle" aria-label="Change color theme">Theme: Navy</button>
       <div class="session" id="sessionBox"></div>
     </div>
   </header>
 
-  <div class="panel" id="authPanel" hidden>
-    <div class="authTabs">
-      <button type="button" data-authtab="login" aria-current="true">Sign in</button>
-      <button type="button" data-authtab="signup">Create account</button>
+  <div class="panel auth-panel-v2" id="authPanel" hidden>
+    <div class="auth-header">
+      <h2 id="authHeaderTitle">Hello, welcome</h2>
+      <p id="authHeaderSub">Don't have an account?</p>
+      <button type="button" class="auth-toggle-btn" id="authToggleBtn">Register</button>
     </div>
-    <form id="loginForm" class="authForm">
-      <label for="li-email">Email</label>
-      <input type="email" id="li-email" required>
-      <label for="li-pass">Password</label>
-      <input type="password" id="li-pass" required>
-      <button class="primary" type="submit">Sign in</button>
-      <button class="btn-outline" type="button" id="resendVerification">Resend verification email</button>
-    </form>
-    <form id="signupForm" class="authForm" hidden>
-      <label for="su-name">Full name</label>
-      <input type="text" id="su-name" required>
-      <label for="su-phone">Phone number</label>
-      <input type="text" inputmode="tel" id="su-phone" required placeholder="080...">
-      <label for="su-brand">Business / brand name <span class="sub-hint">(optional)</span></label>
-      <input type="text" id="su-brand" placeholder="e.g. Ade's Car Rentals">
-      <label for="su-bank">Payout bank name</label>
-      <input type="text" id="su-bank" required placeholder="e.g. GTBank">
-      <label for="su-bankacct">Payout account number</label>
-      <input type="text" inputmode="numeric" id="su-bankacct" required placeholder="0123456789">
-      <label for="su-email">Email</label>
-      <input type="email" id="su-email" required>
-      <label for="su-pass">Password</label>
-      <input type="password" id="su-pass" required>
-      <button class="primary" type="submit">Create account</button>
-    </form>
+    <div class="auth-body">
+      <div class="authTabs" id="authTabsReal">
+        <button type="button" data-authtab="login" aria-current="true">Sign in</button>
+        <button type="button" data-authtab="signup">Create account</button>
+      </div>
+      <p id="authModeNotice" class="auth-mode-notice" hidden>Local testing is on. Local accounts can sign in for testing, but their email remains unverified and cannot qualify for email-verification referral rewards.</p>
+      <section id="emailVerificationStatus" class="email-verification-status" role="status" aria-live="polite" hidden><p id="emailVerificationMessage"></p><div><button type="button" id="emailVerificationResend" class="btn-outline" hidden>Resend verification email</button><button type="button" id="emailVerificationSignIn" class="text-link">Go to sign in</button></div></section>
+      <form id="loginForm" class="authForm">
+        <h3 class="auth-form-title">Login</h3>
+        <div class="auth-field"><input type="email" id="li-email" required placeholder="Email" aria-label="Email"><span class="field-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></span></div>
+        <div class="auth-field"><input type="password" id="li-pass" required placeholder="Password" aria-label="Password"><span class="field-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg></span></div>
+        <button type="button" class="forgot-link" id="resendVerification">Resend verification email</button>
+        <button class="primary auth-submit" type="submit">Login</button>
+      </form>
+      <form id="signupForm" class="authForm" hidden>
+        <h3 class="auth-form-title">Create account</h3>
+        <div class="auth-field"><input type="text" id="su-name" required placeholder="Full name" aria-label="Full name"><span class="field-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></span></div>
+        <div class="auth-field"><input type="text" inputmode="tel" id="su-phone" required placeholder="Phone number" aria-label="Phone number"><span class="field-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 015 6a2 2 0 010-2z"/></svg></span></div>
+        <div class="auth-field"><input type="text" id="su-brand" placeholder="Business / brand name (optional)" aria-label="Business or brand name, optional"><span class="field-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><rect x="4" y="9" width="16" height="11" rx="1"/><path d="M9 9V6a3 3 0 016 0v3"/></svg></span></div>
+        <div class="auth-field"><input type="text" id="su-bank" placeholder="Payout bank name (optional, connect before earning)" aria-label="Optional payout bank name"><span class="field-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><path d="M3 10l9-6 9 6"/><path d="M5 10v9h14v-9M9 19v-6h6v6"/></svg></span></div>
+        <div class="auth-field"><input type="text" inputmode="numeric" id="su-bankacct" placeholder="Payout account number (optional)" aria-label="Optional payout account number"><span class="field-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span></div>
+        <div class="auth-field"><input type="text" id="su-referral-code" maxlength="20" autocomplete="off" placeholder="Referral code (optional)" aria-label="Referral code, optional"><span class="field-icon" aria-hidden="true">↗</span></div>
+        <div class="auth-field"><input type="email" id="su-email" required placeholder="Email" aria-label="Email"><span class="field-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></span></div>
+        <div class="auth-field"><input type="password" id="su-pass" required placeholder="Password" aria-label="Password"><span class="field-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg></span></div>
+        <button class="primary auth-submit" type="submit">Create account</button>
+      </form>
+      <div class="social-divider"><span>or continue with</span></div>
+      <div class="social-row"><div id="googleSignInBtn" class="social-icon-slot"></div></div>
+    </div>
   </div>
 
   <nav>
-    <button data-tab="browse" aria-current="true">Browse</button>
-    <button data-tab="post">Post an item</button>
-    <button data-tab="dashboard">Dashboard</button>
+    <button data-tab="browse" class="explore-nav-button" aria-current="true"><span class="explore-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 4.2 4.2"></path></svg></span><span>Explore</span></button>
+    <button data-tab="admin" class="signed-in-tab admin-nav-tab" hidden>Admin dashboard</button>
+    <button data-tab="about">About</button>
+    <button data-tab="faq">FAQ</button>
+    <button data-tab="dashboard" class="signed-in-tab" hidden>My dashboard</button>
+    <button data-tab="post" class="signed-in-tab" hidden>List an item</button>
+    <button data-tab="history" class="signed-in-tab" hidden>History</button>
+    <button data-tab="messages" class="signed-in-tab" hidden>Messages <b id="messagesTabUnread" class="notification-count message-tab-badge" hidden></b></button>
+    <button data-tab="rider" id="riderEntryButton">Become a rider</button>
+    <div class="top-nav-more-wrap signed-in-tab" id="topNavMoreWrap" hidden>
+      <button type="button" id="topNavMoreToggle" aria-expanded="false" aria-controls="topNavMoreMenu"><span aria-hidden="true">•••</span> More</button>
+      <div id="topNavMoreMenu" class="top-nav-more-menu" hidden>
+        <button type="button" id="userNotificationsButton">Notifications <b class="notification-count" id="userNotificationCount" hidden></b></button>
+        <button type="button" data-tab="rider" id="topNavRider" hidden>Rider dashboard</button>
+        <button type="button" data-tab="account" id="topNavAccount">Account &amp; Settings</button>
+      </div>
+    </div>
   </nav>
 
   <section id="browse" aria-current="true">
-    <div class="hero">
-      <h1>Rent what you need. Share what you own.</h1>
-      <p class="tagline">Tools, vehicles, event gear, furniture and more — from people near you.
-        <button type="button" id="listCta" class="link-btn">List an item</button>
-      </p>
+    <div class="hero explore-hero">
+      <div class="explore-hero-copy">
+        <p class="explore-eyebrow"><span></span> SHEDSHARE MARKETPLACE</p>
+        <h1>Find what you need.<br><span>Rent it nearby.</span></h1>
+        <p class="tagline">Tools, vehicles, furniture, and more — shared by people around you.</p>
+        <div class="explore-hero-actions"><button type="button" class="explore-primary" id="exploreBrowse">Browse listings <span aria-hidden="true">↓</span></button><button type="button" id="listCta" class="explore-secondary">Have something to share? <strong>List an item&nbsp; →</strong></button></div>
+        <div class="explore-trust"><span>◇</span> Keep conversations and payments on ShedShare</div>
+      </div>
+      <div class="explore-hero-art" aria-hidden="true">
+        <div class="explore-orbit orbit-one"></div><div class="explore-orbit orbit-two"></div>
+        <div class="explore-art-house">⌂</div>
+        <div class="explore-float-card float-card-top"><span class="float-icon blue">⌕</span><span><strong>Find nearby</strong><small>Useful things, when you need them</small></span></div>
+        <div class="explore-float-card float-card-bottom"><span class="float-icon green">↗</span><span><strong>Share what you own</strong><small>Turn idle items into extra income</small></span></div>
+      </div>
     </div>
 
-    <div class="searchbar">
-      <input type="text" id="q-search" placeholder="What are you looking for?">
-      <input type="text" id="q-location" placeholder="Where?">
+    <div class="explore-listing-heading"><div><p class="explore-eyebrow">DISCOVER SOMETHING USEFUL</p><h2>Browse listings</h2></div><span id="browseResultCount" class="browse-result-count">Explore items near you</span></div>
+    <div class="explore-search-panel">
+      <label class="search-field"><span aria-hidden="true">⌕</span><input type="search" id="q-search" placeholder="What are you looking for?" aria-label="Search items"></label>
+      <label class="search-field"><span aria-hidden="true">⌖</span><input type="search" id="q-location" placeholder="City or area (Nigeria)" aria-label="Filter by location"></label>
+      <button type="button" id="useMyLocation" class="btn-outline">Use my location</button>
+      <button type="button" id="exploreSearch" class="explore-search-button">Search listings</button>
     </div>
     <div class="row2 filters">
       <select id="q-cat"></select>
-      <input type="text" inputmode="numeric" id="q-maxprice" placeholder="Max price per unit (₦)">
+      <label class="budget-input"><span>Minimum (₦)</span><input type="number" id="q-minprice" min="0" max="9999999999.99" step="0.01" inputmode="decimal" placeholder="No minimum"></label>
+      <label class="budget-input"><span>Maximum (₦)</span><input type="number" id="q-maxprice" min="0" max="9999999999.99" step="0.01" inputmode="decimal" placeholder="No maximum"></label>
+      <label class="budget-input"><span>Rental price unit</span><select id="q-pricing-unit"><option value="">Any unit</option><option value="hour">Per hour</option><option value="day">Per day</option><option value="week">Per week</option><option value="month">Per month</option><option value="year">Per year</option></select></label>
+      <label class="budget-input"><span>Duration (units)</span><input type="number" id="q-duration" min="1" max="744" step="1" placeholder="Any"></label>
+      <label class="budget-input"><span>Available from</span><input type="datetime-local" id="q-availability"></label>
+      <label class="budget-input"><span>Sort results</span><select id="q-sort"><option value="relevance">Relevance</option><option value="price_asc">Price: low to high</option><option value="price_desc">Price: high to low</option></select></label>
+      <select id="q-radius" aria-label="Radius for item requests and alerts"><option value="1">Requests/alerts: 1 km</option><option value="5">Requests/alerts: 5 km</option><option value="10" selected>Requests/alerts: 10 km</option><option value="25">Requests/alerts: 25 km</option></select>
+      <button type="button" id="listViewToggle" class="btn-outline" aria-pressed="true">List</button><button type="button" id="mapViewToggle" class="btn-outline" aria-pressed="false">Map</button>
     </div>
+    <section class="event-planner-card" id="eventPlannerCard">
+      <div class="section-heading"><div><p class="eyebrow">PLAN AN EVENT</p><h2>Build your event rental collection</h2><p class="fine">Choose available items from ShedShare’s catalogue and send a separate request to each lister. This is a custom collection, not a single-provider package or reservation.</p></div><button type="button" class="btn-outline" id="toggleEventPlanner" aria-expanded="false">Start planning</button></div>
+      <div id="eventPlannerBody" hidden>
+        <form id="eventPlannerForm" class="event-planner-form">
+          <label>Event type<select id="eventType" required><option value="">Choose event</option><option>Birthday</option><option>Wedding</option><option>Conference</option><option>Community gathering</option><option>Concert</option><option>Graduation</option><option>Other</option></select></label>
+          <label>Event location<input id="eventLocation" required maxlength="255" placeholder="City or event venue area"></label>
+          <label>Event date and time<input id="eventDate" type="datetime-local" required></label>
+          <label>Duration (hours)<input id="eventDuration" type="number" min="1" max="744" value="8" required></label>
+          <label>Estimated budget (₦)<input id="eventBudget" type="number" min="0" step="0.01" placeholder="Optional spend estimate"></label>
+          <button type="button" class="btn-outline" id="loadEventInventory">Find event inventory</button>
+        </form>
+        <p id="eventPlannerStatus" class="fine" aria-live="polite"></p>
+        <div id="eventInventoryList" class="event-inventory-grid"></div>
+        <div id="eventSelectedSummary" class="event-selected-summary" hidden></div>
+        <button type="submit" form="eventPlannerForm" class="primary" id="submitEventPlan" disabled>Send separate owner requests</button>
+        <div class="event-plan-history"><h3>Your event plans and requests</h3><div id="eventPlanList"><p class="fine">Load an event plan to view requests.</p></div></div>
+      </div>
+    </section>
+    <div id="mapConfigMessage" class="fine" hidden></div>
+    <div id="listingMap" class="listing-map" hidden></div>
     <div class="cat-pills" id="catPills"></div>
 
     <div class="grid" id="itemGrid"></div>
+    <p class="fine budget-search-note" id="budgetSearchNote" aria-live="polite"></p>
+    <button type="button" class="btn-outline load-more-listings" id="loadMoreListings" hidden>Load more listings</button>
+    <section class="testimonial-section" aria-labelledby="testimonialHeading"><div class="section-heading"><div><p class="eyebrow">FROM THE COMMUNITY</p><h2 id="testimonialHeading">What members say</h2></div><p class="fine">Shared with permission and reviewed before publication.</p></div><div class="testimonial-track" id="testimonialTrack" tabindex="0" role="region" aria-label="Approved member testimonials" aria-live="off"><p class="fine">Member stories will appear here.</p></div></section>
+    <div id="noResultsActions" class="empty-filtered" hidden><strong>Nothing available near you yet</strong><p>Tell nearby owners what you need or get a message when a match is listed.</p><button id="requestItemButton" class="primary" type="button">Request this item</button> <button id="notifyItemButton" class="btn-outline" type="button">Notify me when available</button> <button id="externalSearchButton" class="btn-outline" type="button" hidden>Search nearby businesses</button><div id="externalSearchResults" aria-live="polite"></div></div>
+  </section>
+
+  <section id="about" class="public-info-page" aria-labelledby="aboutTitle">
+    <div class="public-info-hero"><p class="eyebrow">ABOUT SHEDSHARE</p><h1 id="aboutTitle">Useful things, shared nearby.</h1><p>ShedShare is a local rental marketplace where people can find useful items offered by nearby owners. It gives owners a place to share equipment and other belongings they are willing to rent, while helping renters find what they need for a project, event, trip, or short-term task.</p><p>Our aim is to make borrowing and renting easier to explore, with clear listings, direct conversations, and rental terms that both sides can review before they agree.</p><div class="public-info-actions"><button type="button" class="primary" data-goto="browse">Explore listings</button><button type="button" class="btn-outline" data-goto="faq">Read the FAQ</button></div></div>
+    <div class="public-info-grid"><article class="public-info-card"><span>01</span><h2>Find an item</h2><p>Browse available listings by item and location. Open a listing to review its photos, condition, price, rental period, and pickup area. Ask the lister questions through ShedShare before making a decision.</p></article><article class="public-info-card"><span>02</span><h2>Agree clearly</h2><p>Before a rental is confirmed, both sides can review the dates, price, item condition, handover, and return expectations. The renter should check the agreement carefully and raise questions before accepting.</p></article><article class="public-info-card"><span>03</span><h2>Share responsibly</h2><p>Owners can list items with their own photos and an accurate description. Sharing the condition, included accessories, known defects, pickup arrangements, and rental rules helps renters know what to expect.</p></article></div>
+    <div class="public-info-grid"><article class="public-info-card"><span>FOR RENTERS</span><h2>Choose with care</h2><p>Compare listings and contact the owner when you need clarification. Confirm the item, dates, price, and handover details in the app before proceeding with a booking.</p></article><article class="public-info-card"><span>FOR OWNERS</span><h2>Set expectations</h2><p>Use clear photos, set a fair rental price, keep availability up to date, and explain any conditions a renter should know. Respond to questions so both sides can make an informed choice.</p></article><article class="public-info-card"><span>YOUR PRIVACY</span><h2>Pickup details stay private</h2><p>Public listings show an approximate location to help people browse nearby. The exact pickup address is kept private and is shared with the renter only when the rental reaches the appropriate confirmed stage.</p></article></div>
+    <p class="public-info-note">ShedShare helps people discover listings and manage rental conversations and booking steps. Payment and delivery options depend on the services available for that rental. A payment is confirmed only after the app verifies it; a screenshot or message is not proof of payment.</p>
+  </section>
+
+  <section id="faq" class="public-info-page" aria-labelledby="faqTitle">
+    <div class="public-info-hero compact"><p class="eyebrow">HELP &amp; ANSWERS</p><h1 id="faqTitle">Frequently asked questions</h1><p>Here are the basics for browsing, listing, renting, and communicating on ShedShare.</p></div>
+    <div class="faq-list">
+      <details><summary>How do I list an item?</summary><p>Create an account, choose “List an item,” add accurate details and clear photos, disclose known defects, set your price and rental conditions, then submit the listing.</p></details>
+      <details><summary>How do I contact a lister?</summary><p>Sign in and open a listing to start a conversation. Keep rental questions and arrangements in ShedShare messaging.</p></details>
+      <details><summary>When is a rental confirmed?</summary><p>A rental is confirmed only after the app verifies the payment through its configured payment provider. A screenshot or message alone is not confirmation.</p></details>
+      <details><summary>Can I arrange delivery?</summary><p>Delivery options vary by listing and platform configuration. Check the rental details and agree on handover arrangements before accepting.</p></details>
+      <details><summary>What should I include in a listing?</summary><p>Use your own accurate photos and describe the item, its condition, what is included, any known defects, pickup area, price, and rental expectations.</p></details>
+      <details><summary>How do I report a problem?</summary><p>Use the report controls in a conversation where available, or contact the ShedShare support team through the support contact provided by the operator.</p></details>
+      <details><summary>Can I delete my account?</summary><p>Open Account &amp; Settings in your member dashboard and choose “Delete my account.” Some transaction and safety records may be retained in anonymized form.</p></details>
+    </div>
+    <p class="public-info-note">For a question not answered here, contact ShedShare support. This FAQ is general guidance; the terms shown for a particular rental still matter.</p>
   </section>
 
   <section id="post">
     <h1 id="postTitle">Post an item for rent</h1>
     <button type="button" class="back" id="cancelEdit" hidden>Cancel editing</button>
-    <form class="panel" id="itemForm">
+    <form class="panel post-form" id="itemForm">
       <label for="i-name">Item name</label>
       <input type="text" id="i-name" required placeholder="Cordless drill">
       <label for="i-image">Photo</label>
-      <input type="file" id="i-image" accept="image/*">
-      <div id="imagePreviewWrap" style="display:none;">
+      <input type="file" id="i-image" accept="image/jpeg,image/png,image/webp">
+      <p class="fine">JPEG, PNG, or WebP · up to 8 MiB.</p>
+      <div id="aiPhotoTools" class="ai-tools"><p class="fine">Clean Photo with Cloudinary uses standard lighting, colour, contrast, and sharpening adjustments. It does not generate or replace item details. Review the result for accuracy; the original is never overwritten until you select Use Enhanced Photo and save the listing.</p><div class="ai-tool-actions"><button type="button" class="btn-outline" id="enhancePhoto" disabled>✦ Clean Photo with Cloudinary</button><button type="button" class="btn-outline" id="cancelPhotoEnhancement" hidden>Stop waiting</button></div><p id="cloudinaryPhotoStatus" class="ai-result" aria-live="polite">Checking Cloudinary photo-cleaning setup…</p><div id="photoCompare" class="photo-compare" hidden><figure><figcaption>Original</figcaption><img id="photoOriginalCompare" alt="Original listing photo"></figure><figure><figcaption>Enhanced preview</figcaption><img id="photoEnhancedCompare" alt="Enhanced listing photo preview"></figure><p class="fine photo-review-note">Check that the item’s model, colour, identifying details, condition, and visible defects remain accurate.</p><div class="ai-tool-actions"><button type="button" class="primary" id="acceptEnhancedPhoto">Use Enhanced Photo</button><button type="button" class="btn-outline" id="discardEnhancedPhoto">Keep Original</button></div></div></div>
+      <div id="imagePreviewWrap" hidden>
         <img id="imagePreview" class="detail-photo" alt="Preview">
+        <button type="button" class="btn-outline" id="restoreOriginalPhoto" hidden>Restore original photo</button>
       </div>
       <label for="i-video">Video <span class="sub-hint">(optional, max 20MB, keep it short)</span></label>
       <input type="file" id="i-video" accept="video/*">
-      <div id="videoPreviewWrap" style="display:none;">
+      <div id="videoPreviewWrap" hidden>
         <video id="videoPreview" class="detail-video" controls></video>
       </div>
       <div class="row2">
@@ -107,10 +202,25 @@
           </select>
         </div>
       </div>
-      <label for="i-loc">Location (city / area)</label>
-      <input type="text" id="i-loc" required placeholder="Uyo, Akwa Ibom">
+      <label for="i-city">City <span class="sub-hint">(required)</span></label>
+      <input type="text" id="i-city" required placeholder="Lagos">
+      <label for="i-state">State <span class="sub-hint">(required)</span></label>
+      <input type="text" id="i-state" required placeholder="Lagos">
+      <label for="i-area">Area name</label>
+      <input type="text" id="i-area" required placeholder="Yaba">
+      <div class="location-autocomplete"><label for="i-address">Pickup address (private until rental confirmation)</label>
+      <input type="text" id="i-address" required placeholder="Full pickup address in Nigeria" autocomplete="street-address" aria-autocomplete="list" aria-controls="ownerAddressSuggestions">
+      <div id="ownerAddressSuggestions" class="location-suggestions" role="listbox" hidden></div></div>
+      <button type="button" id="usePickupLocationButton" class="btn-outline">Use my current location (optional)</button>
+      <p class="fine" id="itemLocationStatus" aria-live="polite">Optional: use your device location to suggest a pickup address. If pickup is elsewhere, enter the shop, workshop, or other pickup address manually.</p>
+      <input type="hidden" id="i-lat"><input type="hidden" id="i-lng">
+      <input type="hidden" id="i-place-id">
       <label for="i-desc">Description</label>
       <textarea id="i-desc" placeholder="What it is, what's included, pickup details."></textarea>
+      <p id="aiDescriptionStatus" class="fine" aria-live="polite" hidden></p>
+      <label for="i-defects">Known defects</label><textarea id="i-defects" maxlength="4000" placeholder="Disclose damage, missing accessories, or write None known."></textarea>
+      <label for="i-conditions">Rental conditions</label><textarea id="i-conditions" maxlength="4000" placeholder="Handover, use, and return expectations."></textarea>
+      <label for="i-cancellation">Cancellation policy</label><textarea id="i-cancellation" maxlength="4000" placeholder="Describe the cancellation terms the renter and owner agree to."></textarea>
 
       <div class="row2">
         <div>
@@ -123,9 +233,17 @@
             <option value="hour">Hour</option>
             <option value="day" selected>Day</option>
             <option value="week">Week</option>
+            <option value="month">Month</option>
+            <option value="year">Year</option>
           </select>
         </div>
       </div>
+      <fieldset class="delivery-choice rental-rate-options"><legend>Other supported rental periods</legend>
+        <div id="additionalRentalRates"></div>
+        <p class="fine">The price above configures the selected primary period. Add only periods you can honor.</p>
+      </fieldset>
+      <label for="i-quantity">Available units / rooms</label><input type="number" id="i-quantity" min="1" max="10000" value="1" required>
+      <section id="availabilityManager" class="availability-manager" hidden><h3>Manage unavailable dates or units</h3><p class="fine">Confirmed rentals consume capacity automatically. Add a block for owner reservations, occupancy, or dates unavailable outside ShedShare.</p><div class="row2"><label>From <input type="datetime-local" id="availabilityStart"></label><label>Until <input type="datetime-local" id="availabilityEnd"></label></div><div class="row2"><label>Status <select id="availabilityStatus"><option value="reserved">Reserved</option><option value="booked">Booked</option><option value="occupied">Occupied / tenancy</option><option value="unavailable">Unavailable</option></select></label><label>Units blocked <input type="number" id="availabilityQuantity" min="1" placeholder="All units"></label></div><label>Note (optional)<input id="availabilityNote" maxlength="500"></label><button type="button" class="btn-outline" id="addAvailabilityBlock">Add availability block</button><div id="availabilityBlockList" aria-live="polite"></div></section>
       <div class="row2">
         <div>
           <label for="i-minp">Min rental period</label>
@@ -136,12 +254,15 @@
           <input type="number" id="i-maxp" min="1" value="14">
         </div>
       </div>
-      <label for="i-deposit">Deposit (₦, optional — refunded by you on safe return)</label>
+      <label for="i-deposit">Informational deposit (₦, optional — arranged directly at handover)</label>
       <input type="text" inputmode="numeric" id="i-deposit" placeholder="0">
-      <p class="fine" id="depositHint"></p>
+      <p class="fine" id="depositHint">Deposits are arranged directly between the renter and owner. ShedShare does not collect or hold them.</p>
+      <label class="check-row"><input type="checkbox" id="i-installments"> Offer a deposit and balance schedule for this listing</label>
+      <label for="i-installment-deposit-percent">Initial payment (% of rental price)</label>
+      <input type="number" id="i-installment-deposit-percent" min="1" max="99" step="1" value="50">
+      <p class="fine">If enabled, the balance is due 24 hours before the rental starts. Full payment remains available when a booking is agreed. Configure your receiving bank details in Account Settings.</p>
 
-      <label>Delivery</label>
-      <div class="terms-box">Coming soon — every listing is pickup only for now.</div>
+      <fieldset class="delivery-choice"><legend>Rider delivery</legend><label><input type="checkbox" id="i-rider-delivery-available"> Allow renters to request delivery by a ShedShare rider</label><p class="fine">When a rider accepts, they set the delivery fee. The renter pays through Paystack; ShedShare keeps 5% and the rider receives 95%.</p></fieldset>
 
       <div class="split-preview" id="splitPreview"></div>
 
@@ -155,37 +276,141 @@
   </section>
 
   <section id="dashboard">
-    <h1>Dashboard</h1>
-    <div class="panel" id="payoutSetup" hidden>
-      <h2 class="subhead">Connect your payout account</h2>
-      <p class="fine">Paystack will verify the bank account before it can receive rental payments.</p>
-      <button class="primary" type="button" id="setupPayout">Verify and connect payout account</button>
+    <div class="user-dashboard-app">
+      <aside class="user-sidebar">
+        <a class="user-brand" href="#dashboard"><span class="user-brand-mark">⌂</span><span><strong>ShedShare</strong><small>RENT · SHARE · EARN</small></span></a>
+        <nav class="user-side-nav" aria-label="Your dashboard">
+          <button type="button" class="user-side-link is-current" data-user-jump="userOverview"><span>⌂</span>Dashboard</button>
+          <button type="button" class="user-side-link" data-user-tab="browse"><span>⌕</span>Browse Listings</button>
+          <button type="button" class="user-side-link" data-user-tab="browse" data-event-planner-nav><span>✦</span>Event Planner</button>
+          <button type="button" class="user-side-link" data-user-tab="history"><span>▦</span>My Rentals</button>
+          <button type="button" class="user-side-link" data-user-jump="userReferrals"><span>↗</span>Referrals</button>
+          <button type="button" class="user-side-link" data-user-tab="messages"><span>◉</span>Messages <b id="userMessagesUnread" class="message-tab-badge" hidden></b></button>
+          <div class="user-more-wrap">
+            <button type="button" class="user-side-link user-more-toggle" id="userMoreToggle" aria-expanded="false" aria-controls="userMoreMenu"><span>•••</span>More</button>
+            <div class="user-more-menu" id="userMoreMenu" hidden>
+              <button type="button" class="user-side-link" data-user-jump="userSaved"><span>♧</span>My Bookmarks <b id="userBookmarkNavCount">0</b></button>
+              <button type="button" class="user-side-link" data-user-tab="history"><span>▤</span>Payments</button>
+              <button type="button" class="user-side-link" data-user-jump="userAccount"><span>♙</span>Profile</button>
+              <button type="button" class="user-side-link" data-user-jump="userSettings"><span>⚙</span>Settings</button>
+            </div>
+          </div>
+        </nav>
+        <div class="user-sidebar-help"><span>?</span><div><strong>Need Help?</strong><small>Contact support</small></div><button type="button" data-user-tab="messages" aria-label="Open messages">›</button></div>
+        <button type="button" class="user-signout" id="userSignOut"><span>⇥</span>Log Out</button>
+      </aside>
+      <main class="user-main" id="userOverview">
+        <div class="user-topbar">
+          <label class="user-search"><span>⌕</span><input id="userDashboardSearch" type="search" placeholder="Search for items, categories, or anything…" aria-label="Search ShedShare listings"></label>
+          <div class="user-identity"><span id="userAvatar">DG</span><div><strong id="userHeaderName">Your account</strong><small id="userHeaderRole">Member</small></div><button type="button" data-user-jump="userAccount" aria-label="Open profile">⌄</button></div>
+        </div>
+        <div class="user-content">
+          <div class="user-welcome"><div><p class="eyebrow">YOUR SHEDSHARE</p><h1 id="dashboardTitle">Good morning!</h1><p id="dashboardSubtitle">Find and rent what you need, when you need it.</p></div><button type="button" class="user-refresh" id="dashboardRefresh" aria-label="Refresh dashboard">↻</button></div>
+          <div class="panel user-payout" id="payoutSetup" hidden><div><strong>Get paid for your rentals</strong><p class="fine">Connect your payout account to receive rental payments.</p></div><button class="primary" type="button" id="setupPayout">Connect payout account</button></div>
+          <div class="user-stat-grid" id="userSummary"></div>
+          <section class="user-panel user-listings-panel" id="userListings"><div class="user-panel-heading"><div><h2>My Listings</h2><p>Manage the items you share. Pause or permanently delete each listing here.</p></div><button type="button" class="user-view-all" data-user-tab="post">+ Add listing</button></div><div id="listingsList"></div><div class="empty" id="listingsEmpty" hidden>You haven't posted anything yet.</div><button type="button" class="user-show-more" id="userListingsMore" hidden>Show more listings</button></section>
+          <div class="user-dashboard-grid">
+            <section class="user-panel user-activity-panel"><div class="user-panel-heading"><div><h2>Recent Activity</h2><p>Your latest rentals and listing activity</p></div><button type="button" class="user-view-all" data-user-tab="history">View all&nbsp; →</button></div><div id="userRecentActivity" class="user-activity-list"></div><button type="button" class="user-show-more" id="userActivityMore" hidden>Show more activity</button></section>
+            <aside class="user-rail">
+              <section class="user-promo"><span class="promo-house">⌂</span><h2>Rent. Share. Earn.</h2><p>ShedShare connects people with things they need — and helps you earn from what you have.</p><button type="button" data-user-tab="browse">Explore listings&nbsp; →</button></section>
+              <section class="user-panel user-quick-panel"><div class="user-panel-heading"><h2>Quick Access</h2></div>
+                <button class="user-quick-link" type="button" data-user-tab="browse"><span class="quick-icon blue">⌕</span><span><strong>Browse Listings</strong><small>Find items to rent</small></span><b>›</b></button>
+                <button class="user-quick-link" type="button" data-user-tab="post"><span class="quick-icon green">＋</span><span><strong>Add Listing</strong><small>List an item you own</small></span><b>›</b></button>
+                <button class="user-quick-link" type="button" data-user-tab="messages"><span class="quick-icon purple">◉</span><span><strong>Contact Support</strong><small>Get help when you need it</small></span><b>›</b></button>
+              </section>
+              <section class="user-panel user-help-panel"><span>♧</span><div><h2>Need Help?</h2><p>Our support team is here for you.</p><button type="button" data-user-tab="messages">Open messages</button></div></section>
+            </aside>
+          </div>
+          <section class="user-panel referral-dashboard-panel" id="userReferrals"><div class="user-panel-heading"><div><h2>Invite friends</h2><p>Share your ShedShare referral link. Rewards are issued only for configured qualifying actions after review.</p></div><button type="button" class="user-view-all" id="refreshReferrals">Refresh ↻</button></div><div id="referralDashboardContent" aria-live="polite"><div class="empty">Loading referral details…</div></div></section>
+          <section class="user-panel" id="userInspections"><div class="user-panel-heading"><div><h2>Inspection appointments</h2><p>Inspection requests are separate from bookings and never require payment.</p></div></div><div id="inspectionList"></div></section>
+          <section class="user-panel user-bookmarks-panel" id="userSaved"><div class="user-panel-heading"><div><h2>My Bookmarks</h2><p>Items saved on this device</p></div></div><div id="userBookmarksList" class="bookmark-list"><div class="empty">Your saved items will appear here.</div></div><button type="button" class="user-show-more" id="userBookmarksMore" hidden>Show more bookmarks</button></section>
+          <section class="user-account-panel" id="userAccount" aria-label="Account details"><span id="userAccountAvatar">DG</span><div><strong id="userAccountName">Your account</strong><small id="userAccountEmail">Sign in to view your account details</small></div><button type="button" data-user-tab="history">Account history&nbsp; →</button></section>
+          <section class="user-account-panel user-settings-panel" id="userSettings" aria-label="Account settings"><span>⚙</span><div><strong>Account settings</strong><small>Password and account security are managed by your ShedShare sign-in.</small><div class="notification-preferences"><label for="manualBankName">Receiving bank name</label><input id="manualBankName" maxlength="120" autocomplete="off"><label for="manualAccountName">Bank account name</label><input id="manualAccountName" maxlength="120" autocomplete="off"><label for="manualAccountNumber">Receiving account number</label><input id="manualAccountNumber" inputmode="numeric" maxlength="10" autocomplete="off" placeholder="Enter 10 digits"><button type="button" class="btn-outline" id="saveManualBankDetails">Save transfer details</button><small id="manualBankDetailsStatus">Bank details are private and shown only to participants in a booking payment schedule.</small><label><input type="checkbox" id="pref-inapp" checked> In-app notifications</label><label><input type="checkbox" id="pref-email" disabled> Email alerts (unavailable)</label><label><input type="checkbox" id="pref-push" disabled> Phone notifications (unavailable)</label><button type="button" class="btn-outline" id="saveNotificationPreferences">Save notification preferences</button><button type="button" class="btn-outline danger-button" id="deleteAccount">Delete my account</button><small>Phone alerts require permission on this device. Deletion removes your access and profile details. Transaction and safety records may be retained in anonymized form.</small></div></div><button type="button" data-user-signout>Log out</button></section>
+          <section class="user-account-panel user-settings-panel testimonial-compose" aria-label="Share your experience"><span>♡</span><div><strong>Share your ShedShare experience</strong><small>Testimonials are optional and reviewed before they can appear publicly.</small><label for="testimonialDisplayName">Display name</label><input id="testimonialDisplayName" type="text" maxlength="80" placeholder="Name to show publicly"><label for="testimonialBody">Your testimonial</label><textarea id="testimonialBody" maxlength="700" placeholder="What has your experience with ShedShare been like?" rows="3"></textarea><label class="testimonial-consent"><input type="checkbox" id="testimonialConsent"> I agree that this testimonial and display name may be published if approved.</label><button type="button" class="btn-outline" id="submitTestimonial">Submit for review</button><p id="testimonialStatus" class="fine" aria-live="polite"></p></div></section>
+          <section class="user-hidden-rentals" aria-label="My rentals"><div id="rentalsList"></div><div class="empty" id="rentalsEmpty" hidden>You haven't rented anything yet.</div></section>
+        </div>
+      </main>
     </div>
-    <h2 class="subhead">My listings</h2>
-    <div id="listingsList"></div>
-    <div class="empty" id="listingsEmpty" hidden>You haven't posted anything yet.</div>
+  </section>
 
-    <h2 class="subhead">My rentals</h2>
-    <div id="rentalsList"></div>
-    <div class="empty" id="rentalsEmpty" hidden>You haven't rented anything yet.</div>
+  <section id="history">
+    <div class="dashboard-heading"><div><p class="eyebrow">YOUR ACCOUNT</p><h1>History</h1><p class="dashboard-subtitle">Past and current rentals, payments, and listing activity.</p></div><button type="button" class="btn-outline" id="historyRefresh">Refresh</button></div>
+    <div class="history-tabs" role="tablist" aria-label="History type"><button type="button" class="history-filter" data-history-filter="rentals" aria-pressed="true">Rentals</button><button type="button" class="history-filter" data-history-filter="listings" aria-pressed="false">Listing activity</button></div>
+    <div class="history-list" id="historyList"></div>
+  </section>
 
-    <div id="adminSection" hidden>
-      <h2 class="subhead">All transactions <span class="admin-tag">admin view</span></h2>
-      <div class="split-preview" id="adminSummary"></div>
-      <div id="allTxList" style="margin-top:0.6rem;"></div>
+  <section id="messages">
+    <div class="dashboard-heading"><div><p class="eyebrow">SHEDSHARE INBOX</p><h1>Messages</h1><p class="dashboard-subtitle">Chat with listers and renters about your bookings.</p></div></div>
+    <section class="dashboard-card messages-card" id="messagesPanel">
+      <div class="section-heading"><div><p class="eyebrow">YOUR CONVERSATIONS</p><h2>Inbox</h2><p class="fine">Contact details are hidden until booking payment is confirmed. Rider phone numbers are never shared.</p></div></div>
+      <div class="inbox-layout"><aside class="message-sidebar"><section class="message-group"><h3>Your conversations</h3><div class="conversation-list" id="conversationList"><div class="empty">Conversations appear here after your first message.</div></div></section><section class="message-group"><h3>Available listers</h3><p class="fine">Choose a listing to message its lister. Contact details stay private.</p><div class="message-directory" id="messageDirectory"><div class="empty">Loading listers…</div></div></section></aside><div class="chat-pane"><div class="chat-empty" id="chatEmpty">Choose a lister to start a conversation.</div><div class="chat-thread" id="chatThread" aria-live="polite"></div><form class="chat-compose" id="chatForm" hidden><label class="sr-only" for="chatText">Write a message</label><textarea id="chatText" rows="2" maxlength="4000" placeholder="Write a message. Contact details are hidden until booking payment is confirmed."></textarea><label class="chat-upload">Attach photo<input id="chatImage" type="file" accept="image/jpeg,image/png,image/webp" hidden></label><button type="submit" class="primary">Send</button></form></div></div>
+      <p class="fine">ShedShare may review messages for safety, fraud prevention, and dispute resolution. Off-platform payments are not verified and do not create a verified rental record or ShedShare receipt.</p>
+    </section>
+  </section>
 
-      <h2 class="subhead">Delivery partners <span class="admin-tag">mock</span></h2>
-      <div class="row-card"><div class="top"><strong>Emeka Logistics</strong><span class="status confirmed">Available</span></div></div>
-      <div class="row-card"><div class="top"><strong>QuickDash Riders</strong><span class="status busy">Busy</span></div></div>
-    </div>
+  <section id="rider">
+    <div class="dashboard-heading"><div><p class="eyebrow">DELIVERY SERVICE</p><h1>Rider</h1><p class="dashboard-subtitle">Apply to deliver, track your review, or manage approved deliveries.</p></div></div>
+    <section id="riderPageFallback" class="dashboard-card rider-application-status"><span class="rider-status-icon" aria-hidden="true">↻</span><div><p class="eyebrow">RIDER AREA</p><h2 id="riderPageFallbackTitle">Loading rider options…</h2><p id="riderPageFallbackText" class="fine">Your application form or delivery console will appear here.</p><button type="button" id="riderPageRetry" class="btn-outline">Load rider options</button></div></section>
+    <section id="riderApplicationStatus" class="dashboard-card rider-application-status" hidden><span class="rider-status-icon" aria-hidden="true">✓</span><div><p class="eyebrow">RIDER APPLICATION</p><h2 id="riderStatusTitle">Application status</h2><p id="riderStatusMessage" class="fine"></p><p id="riderApplicationDetails" class="fine"></p></div></section>
+    <section id="riderDashboard" class="dashboard-card" hidden><div class="section-heading"><div><p class="eyebrow">RIDER CONSOLE</p><h2>My deliveries</h2><p class="fine">Heading to pickup → Picked up → Delivered. Keep this page open while working.</p></div><button type="button" id="riderAvailabilityButton" class="btn-outline">Set availability</button></div><div id="riderRatingSummary" class="fine"></div><div id="riderDeliveryList"></div><section class="rider-earnings"><h3>Earnings</h3><div id="riderEarningsList"><div class="empty">Completed deliveries appear here.</div></div></section></section>
+    <section id="riderApplyCard" class="dashboard-card" hidden><div class="section-heading"><div><p class="eyebrow">JOIN THE DELIVERY TEAM</p><h2>Become a rider</h2><p class="fine">Your profile photo and ID are stored privately and reviewed by ShedShare admins.</p></div></div><p id="riderPayoutStatus" class="fine">Payout account status is checked using your existing Paystack setup.</p><button type="button" class="btn-outline" id="riderPayoutSetup">Connect existing Paystack payout account</button><form id="riderApplyForm"><label for="riderFullName">Full name</label><input id="riderFullName" type="text" maxlength="120" required><label for="riderPhone">Phone</label><input id="riderPhone" type="tel" maxlength="40" required><label for="riderCity">City</label><input id="riderCity" type="text" maxlength="100" required><label for="riderState">State</label><input id="riderState" type="text" maxlength="100" required><label for="riderVehicle">Vehicle type</label><select id="riderVehicle" required><option value="">Choose vehicle</option><option value="bike">Bike</option><option value="tricycle">Tricycle</option><option value="car">Car</option><option value="van">Van</option></select><label for="riderPlate">Plate number</label><input id="riderPlate" type="text" maxlength="40" required><label for="riderPhoto">Profile photo</label><input id="riderPhoto" type="file" accept="image/jpeg,image/png,image/webp" required><label for="riderIdPhoto">ID document photo</label><input id="riderIdPhoto" type="file" accept="image/jpeg,image/png,image/webp" required><p class="fine">JPEG, PNG or WebP · 5 MiB maximum per image. Documents are visible only to ShedShare admins.</p><button class="primary" type="submit">Submit rider application</button></form></section>
+  </section>
+
+  <section id="admin">
+    <section id="adminSection" class="admin-dashboard" hidden>
+      <aside class="admin-sidebar">
+        <a class="admin-brand" href="#admin" aria-label="ShedShare admin home"><span class="admin-brand-mark">⌂</span><span><strong>ShedShare</strong><small>RENT · SHARE · EARN</small></span></a>
+        <div class="admin-side-nav" aria-label="Admin navigation">
+          <button type="button" class="admin-side-link is-current" data-admin-jump="adminOverview"><span>▦</span>Dashboard</button>
+          <button type="button" class="admin-side-link" data-admin-jump="adminListers"><span>◇</span>Listers <b id="listerCount">0</b></button>
+          <button type="button" class="admin-side-link" data-admin-jump="adminUsers"><span>♧</span>Registered users <b id="registeredUserCount">0</b></button>
+          <button type="button" class="admin-side-link" data-admin-jump="adminListingModeration"><span>✓</span>Listing review <b id="listingModerationCount">0</b></button>
+          <button type="button" class="admin-side-link" data-admin-jump="adminReferrals"><span>↗</span>Referrals</button>
+          <button type="button" class="admin-side-link" data-admin-jump="adminTransactions"><span>▤</span>Rentals</button>
+          <button type="button" class="admin-side-link" data-admin-jump="adminPayments"><span>₦</span>Payments</button>
+          <button type="button" class="admin-side-link" data-admin-jump="adminDeliveries"><span>⌖</span>Delivery partners</button>
+          <button type="button" class="admin-side-link" data-admin-jump="adminSafety"><span>◉</span>Messages &amp; safety</button>
+          <button type="button" class="admin-side-link" data-admin-jump="adminTransactions"><span>▥</span>Reports</button>
+          <button type="button" class="admin-side-link" data-admin-jump="adminAnalytics"><span>↗</span>Growth &amp; analytics</button>
+          <button type="button" class="admin-side-link" data-admin-jump="adminSettings"><span>⚙</span>Settings</button>
+        </div>
+        <div class="admin-quick"><p>QUICK ACCESS</p><button type="button" data-goto="post"><span>＋</span> Add new listing</button><button type="button" data-admin-jump="adminTransactions"><span>▤</span> View rentals</button><button type="button" data-admin-jump="adminDeliveries"><span>⌖</span> Manage delivery</button></div>
+        <div class="admin-sidebar-note"><span>⌂</span><strong>ShedShare Admin</strong><p>Manage your platform and keep your community safe.</p><small>LOCAL OPERATIONS</small></div>
+      </aside>
+      <div class="admin-main">
+        <header class="admin-topbar"><label class="admin-search"><span>⌕</span><input id="adminSearch" type="search" placeholder="Search listers, rentals, or anything…" aria-label="Search admin data"></label><button type="button" class="admin-icon-button" id="adminNotificationsButton" aria-label="Notifications">♧<i id="adminNotificationCount" hidden></i></button><div class="admin-identity"><span id="adminAvatar">DG</span><div><strong id="adminUserName">Administrator</strong><small>Administrator</small></div></div><button type="button" class="admin-refresh" id="adminRefresh" aria-label="Refresh dashboard">↻</button><button type="button" id="adminSignOut" class="admin-signout">Sign out</button></header>
+        <div class="admin-content" id="adminOverview">
+          <div class="admin-page-heading"><div><p class="eyebrow">SHEDSHARE OVERVIEW</p><h1>Good morning, <span id="adminGreetingName">Daniel</span> <span class="sun-mark">☀</span></h1><p>Here’s what’s happening with your ShedShare platform today.</p></div><span class="admin-date" id="adminDateRange">LOCAL OPERATIONS</span></div>
+          <div class="admin-stats" id="adminSummary"></div>
+          <div id="adminAnalytics" class="admin-analytics"><div class="admin-charts"><section class="admin-panel"><div class="admin-panel-heading"><div><h2>Rental activity</h2><p>Recent bookings recorded by ShedShare</p></div><span class="chart-legend"><i></i> Rentals</span></div><div class="admin-chart" id="rentalChart"></div></section><section class="admin-panel"><div class="admin-panel-heading"><div><h2>Platform earnings</h2><p>Platform commission by recent booking date</p></div><span class="chart-legend earnings"><i></i> Earnings</span></div><div class="admin-chart" id="earningsChart"></div></section></div>
+          <div class="admin-lower-grid"><section class="admin-panel financial-panel" id="adminPayments"><div class="admin-panel-heading"><div><h2>Financial overview</h2><p>Totals from saved rental records</p></div></div><div class="financial-stats" id="financialSummary"></div></section><section class="admin-panel categories-panel"><div class="admin-panel-heading"><div><h2>Top categories</h2><p>Based on active inventory</p></div></div><div id="categorySummary"></div></section></div></div>
+          <section class="admin-panel recent-panel"><div class="admin-panel-heading"><div><h2>Recent rentals</h2><p>Latest booking activity</p></div><button type="button" class="admin-view-all" data-admin-jump="adminTransactions">View all →</button></div><div id="recentRentals"></div></section>
+          <section class="admin-panel" id="adminTransactions"><div class="admin-panel-heading"><div><h2>All rental records</h2><p>Review transaction statuses and apply safety holds.</p></div></div><div id="allTxList"></div><div class="admin-panel-heading"><div><h2>Reported bank transfers</h2><p>Confirm only after checking that funds arrived in the lister's account.</p></div><button type="button" class="admin-view-all" id="refreshManualPaymentReports">Refresh ↻</button></div><div id="manualPaymentReports"></div><div class="admin-panel-heading"><div><h2>Commission obligations</h2><p>Manual renter-to-lister transfers do not remit ShedShare commission. Record only commission actually received.</p></div><button type="button" class="admin-view-all" id="refreshCommissionObligations">Refresh ↻</button></div><div id="commissionObligations"></div></section>
+          <section id="adminSettings" class="admin-settings-stack"><div class="admin-controls dashboard-card"><div class="control-copy"><span class="control-icon" aria-hidden="true">%</span><div><h3>Marketplace commission rates</h3><p>Set ShedShare commission for new rental and rider payments. Accepted rental summaries and payments already started keep their original rates.</p></div></div><form id="commissionSettingsForm" class="ai-admin-actions"><label>Rental commission (%)<input id="rentalCommissionPercent" type="number" min="0" max="100" step="0.01" required></label><label>Rider commission (%)<input id="riderCommissionPercent" type="number" min="0" max="100" step="0.01" required></label><button type="submit" class="primary">Save commission rates</button></form><small id="commissionSettingsStatus" class="fine" aria-live="polite"></small></div><div class="admin-controls dashboard-card"><div class="control-copy"><span class="control-icon" aria-hidden="true">!</span><div><h3>Emergency checkout pause</h3><p>Stops new Paystack checkouts. Existing payments may still finish at the payment provider.</p></div></div><button type="button" id="paymentPauseButton" class="danger-button">Pause new checkouts</button></div><div class="admin-controls dashboard-card admin-ai-control"><div class="control-copy"><span class="control-icon ai-control-icon" aria-hidden="true">✦</span><div><h3>AI listing tools · Admin only</h3><p>Gemini drafts only the listing description from the selected photo and your details. Rental conditions and cancellation policy stay under your control. Photo enhancement is a separate tool. Existing description text is preserved for you to review and edit.</p><small id="adminAiKeyStatus" class="fine" aria-live="polite">Loading AI configuration…</small></div></div><div class="ai-admin-actions"><button type="button" id="adminAiToggle" class="primary">Use AI</button></div></div><div class="admin-controls dashboard-card"><div class="control-copy"><span class="control-icon" aria-hidden="true">⌖</span><div><h3>Geoapify Maps · Admin only</h3><p>Geoapify maps, address pinning, and nearby search stay off until you enable them here. Restrict your browser map key to the website origins and keep the server key private.</p><small id="adminMapKeyStatus" class="fine" aria-live="polite">Loading map configuration…</small></div></div><div class="ai-admin-actions"><button type="button" id="adminMapToggle" class="primary">Use Map</button></div></div></section>
+          <section class="admin-panel directory-panel" id="adminListers"><div class="admin-panel-heading"><div><h2>Lister directory <span id="listerCountLabel" class="count-pill">0 listers</span></h2><p>Browse listings and review account information. Contact details are administrator-only.</p></div></div><div id="listerList"></div></section>
+          <section class="admin-panel directory-panel" id="adminUsers"><div class="admin-panel-heading"><div><h2>Registered users <span id="registeredUserCountLabel" class="count-pill">0 accounts</span></h2><p>People with an account on ShedShare, including users who have not posted a listing.</p></div><button type="button" class="admin-view-all" id="refreshRegisteredUsers">Refresh list ↻</button></div><div id="registeredUserList" aria-live="polite"></div></section>
+          <section class="admin-panel" id="adminListingModeration"><div class="admin-panel-heading"><div><h2>AI-assisted listing review</h2><p>Gemini only screens listings. Administrators make every decision on flagged or uncertain cases.</p></div><button type="button" class="admin-view-all" id="refreshListingModeration">Refresh ↻</button></div><form id="listingModerationSettingsForm" class="listing-moderation-settings"><label><input id="listingModerationEnabled" type="checkbox"> Enable Gemini screening for new listings</label><small id="listingModerationConfigStatus" class="fine" aria-live="polite"></small><label>Marketplace policy<textarea id="listingModerationPolicy" minlength="40" maxlength="5000" required></textarea></label><label>Prohibited item terms (comma separated)<input id="listingProhibitedTerms" maxlength="3000"></label><label>Terms that always need review (comma separated)<input id="listingReviewTerms" maxlength="3000"></label><label>Minimum confidence for automatic approval<input id="listingModerationConfidence" type="number" min="0.5" max="1" step="0.01" required></label><button type="submit" class="primary">Save moderation policy</button></form><div id="listingModerationQueue" aria-live="polite"></div></section>
+          <section class="admin-panel" id="adminTestimonials"><div class="admin-panel-heading"><div><h2>Testimonials awaiting review</h2><p>Approve only testimonials with public-display consent.</p></div><button type="button" class="admin-view-all" id="refreshTestimonials">Refresh ↻</button></div><div id="testimonialModerationList"></div></section>
+          <section class="admin-panel" id="adminRentalTrust"><div class="admin-panel-heading"><div><h2>Rental reviews &amp; reports</h2><p>Reviews are tied to completed payment-verified rentals. Moderation actions require a reason and are recorded in the admin audit log.</p></div><button type="button" class="admin-view-all" id="refreshRentalTrust">Refresh ↻</button></div><div id="rentalReviewModerationList"></div><h3>Reported reviews</h3><div id="rentalReviewReportsList"></div></section>
+          <section class="admin-panel" id="adminReferrals"><div class="admin-panel-heading"><div><h2>Referral programme</h2><p>Configure qualifying events and non-withdrawable promotional credit. Eligible referrals require review before approval and issuance.</p></div><button type="button" class="admin-view-all" id="refreshReferralAdmin">Refresh ↻</button></div><form id="referralProgramForm" class="referral-admin-form"><label class="referral-enable"><input type="checkbox" id="referralProgramEnabled"> Enable referral programme</label><div id="referralRuleFields"></div><button type="submit" class="primary">Save referral rules</button><p id="referralProgramStatus" class="fine" aria-live="polite"></p></form><h3>Referral review queue</h3><div id="referralAdminList" aria-live="polite"><div class="empty">Loading referrals…</div></div></section>
+          <section class="admin-panel" id="adminDeliveries"><div class="admin-panel-heading"><div><h2>Delivery partners &amp; tracking</h2><p>Current dispatch jobs and shared rider locations.</p></div></div><div id="adminDeliveryList"></div><h3>Rider applications</h3><div id="riderApplicationList"></div></section>
+          <section class="admin-panel" id="adminSafety"><div class="admin-panel-heading"><div><h2>Messages &amp; safety alerts</h2><p>Contact details detected and filtered in marketplace messages.</p></div></div><div id="contactFlagList"></div></section>
+          <section class="admin-panel" id="adminExternalLeads"><div class="admin-panel-heading"><div><h2>External business leads</h2><p id="externalSearchStatus">Loading external search configuration…</p></div></div><div id="externalBusinessLeadList"></div></section>
+        </div>
+      </div>
+    </section>
   </section>
 </div>
 <div class="lightbox" id="lightbox" hidden>
   <button type="button" class="lightbox-close" id="lightboxClose" aria-label="Close">×</button>
-  <div class="lightbox-inner" id="lightboxInner"></div>
+<div class="lightbox-inner" id="lightboxInner"></div>
 </div>
-<div class="toast" id="toast"></div>
+<dialog id="notificationDialog" class="notification-dialog" aria-labelledby="notificationDialogTitle"><header><div><p class="eyebrow">SHEDSHARE UPDATES</p><h2 id="notificationDialogTitle">Notifications</h2></div><button type="button" id="closeNotificationDialog" class="btn-outline">Close</button></header><div id="notificationList" aria-live="polite"><p class="fine">Loading notifications…</p></div></dialog>
+<dialog id="trustProfileDialog" class="trust-profile-dialog" aria-labelledby="trustProfileTitle"><header><div><p class="eyebrow">SHEDSHARE TRUST PROFILE</p><h2 id="trustProfileTitle">Rental trust</h2></div><button type="button" class="btn-outline" id="closeTrustProfile">Close</button></header><div id="trustProfileBody" aria-live="polite"><p class="fine">Loading rental trust information…</p></div></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"><span class="toast-icon" aria-hidden="true">✓</span><span class="toast-message"></span><button class="toast-dismiss" type="button" aria-label="Dismiss notification">×</button></div>
 
-<script src="script.js" defer></script>
+<script src="listing-photo-selection.js" nonce="__CSP_NONCE__" defer></script>
+<script src="script.js?v=3d-motion-15" nonce="__CSP_NONCE__" defer></script>
+<script nonce="__CSP_NONCE__">if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('/service-worker.js').catch(() => {}));</script>
 </body>
 </html>

@@ -1,0 +1,1 @@
+ALTER TABLE items ADD COLUMN original_image VARCHAR(2048) NULL AFTER image;

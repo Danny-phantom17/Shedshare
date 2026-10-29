@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ShedShare — Sign in</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#ffffff; --bg2:#f2f6fd; --card:#ffffff;
+  --ink:#15171f; --ink-dim:#64708a; --line:#e1e8f7;
+  --accent:#2f6fed; --accent-ink:#ffffff; --accent-rgb:47,111,237;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --head:"Plus Jakarta Sans", -apple-system, sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1420; --bg2:#16203a; --card:#1a2440;
+    --ink:#eef2fa; --ink-dim:#93a0c2; --line:#2b3655;
+    --accent:#5b8df5; --accent-ink:#0f1420; --accent-rgb:91,141,245;
+  }
+}
+*{box-sizing:border-box;}
+html,body{height:100%;}
+body{margin:0; background:var(--bg); color:var(--ink); font-family:var(--sans); display:flex; align-items:center; justify-content:center; min-height:100%; padding:1.4rem 1.1rem;}
+.wrap{width:100%; max-width:380px;}
+.toast{position:fixed; left:50%; bottom:1.4rem; transform:translate(-50%,10px); background:var(--ink); color:var(--bg); padding:0.65rem 1.1rem; border-radius:12px; font-size:0.86rem; font-weight:600; opacity:0; transition:opacity .25s ease, transform .25s ease; pointer-events:none; box-shadow:0 8px 24px rgba(0,0,0,0.25);}
+.toast.show{opacity:1; transform:translate(-50%,0);}
+
+.auth-panel-v2{background:var(--card); border:1px solid var(--line); border-radius:22px; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,0.12);}
+.auth-header{background:linear-gradient(135deg, #0f1a33 0%, var(--accent) 140%); color:#fff; text-align:center; padding:1.8rem 1.5rem 1.6rem; border-radius:22px 22px 28px 28px;}
+.auth-header h2{font-family:var(--head); font-weight:800; font-size:1.35rem; margin:0 0 0.3rem;}
+.auth-header p{margin:0 0 0.9rem; font-size:0.82rem; color:rgba(255,255,255,0.75);}
+.auth-toggle-btn{background:transparent; border:1.5px solid rgba(255,255,255,0.7); color:#fff; font-weight:700; font-size:0.85rem; padding:0.5rem 1.6rem; border-radius:999px; cursor:pointer; font-family:var(--sans); transition:background-color .15s ease;}
+.auth-toggle-btn:hover{background:rgba(255,255,255,0.12);}
+.auth-body{padding:1.3rem 1.3rem 1.5rem;}
+#authTabsReal{display:none;}
+.auth-form-title{font-family:var(--head); font-weight:800; font-size:1.15rem; margin:0 0 1rem; text-align:center;}
+.authForm[hidden]{display:none;}
+label{display:block; font-size:0.84rem; color:var(--ink-dim); margin:0.9rem 0 0.35rem; font-weight:600;}
+.auth-field{position:relative; margin-bottom:0.8rem;}
+.auth-field input{width:100%; background:var(--bg2); border:1.5px solid var(--line); border-radius:999px; padding:0.7rem 2.6rem 0.7rem 1.1rem; font-size:0.9rem; font-family:var(--sans); color:var(--ink);}
+.auth-field input:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 4px rgba(var(--accent-rgb),0.12);}
+.auth-field .field-icon{position:absolute; right:1rem; top:50%; transform:translateY(-50%); color:var(--ink-dim); display:flex; pointer-events:none;}
+.auth-field .field-icon .ic{width:17px; height:17px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round;}
+.sub-hint{font-size:0.74rem; font-weight:400; color:var(--ink-dim);}
+.forgot-link{display:block; background:none; border:none; color:var(--ink-dim); font-size:0.8rem; font-family:var(--sans); margin:0 0 1rem; cursor:pointer; text-align:center; width:100%; padding:0;}
+.forgot-link:hover{color:var(--accent);}
+button.primary{width:100%; background:var(--accent); color:var(--accent-ink); border:none; border-radius:999px; padding:0.85rem; font-size:0.98rem; font-weight:700; cursor:pointer; font-family:var(--sans); transition:transform .12s ease, box-shadow .18s ease;}
+.auth-submit{background:linear-gradient(90deg, #0f1a33, var(--accent)); box-shadow:0 8px 18px rgba(var(--accent-rgb),0.3); margin-top:0.2rem;}
+.auth-submit:hover{transform:translateY(-2px);}
+.auth-submit:active{transform:scale(0.98);}
+.social-divider{display:flex; align-items:center; gap:0.7rem; margin:1.2rem 0 0.9rem; color:var(--ink-dim); font-size:0.78rem;}
+.social-divider::before, .social-divider::after{content:""; flex:1; height:1px; background:var(--line);}
+.social-row{display:flex; justify-content:center; gap:0.7rem;}
+.social-icon-slot{display:flex;}
+.social-icon-btn{width:46px; height:46px; border-radius:50%; border:1.5px solid var(--line); background:var(--card); color:var(--ink-dim); font-weight:700; font-size:0.85rem; cursor:pointer; font-family:var(--sans); display:flex; align-items:center; justify-content:center; transition:border-color .15s ease, color .15s ease, transform .12s ease;}
+.social-icon-btn:hover{border-color:var(--accent); color:var(--accent);}
+.social-icon-btn:active{transform:scale(0.94);}
+@media (min-width: 760px){
+  body{padding:2.5rem 2rem;}
+  .wrap{max-width:460px;}
+  .auth-header{padding:2rem 1.8rem 1.8rem;}
+  .auth-body{padding:1.6rem 1.8rem 1.8rem;}
+  .auth-field input{min-height:48px;}
+}
+@media (min-width: 1040px){
+  body{padding:3rem;}
+  .wrap{max-width:540px;}
+  #signupForm:not([hidden]){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:1rem;align-items:start;}
+  #signupForm>.auth-form-title,#signupForm>.primary{grid-column:1/-1;}
+}
+@media (max-height: 760px){
+  body{align-items:flex-start;}
+  .wrap{margin-block:auto;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="auth-panel-v2" id="authPanel">
+    <div class="auth-header">
+      <h2 id="authHeaderTitle">Hello, welcome</h2>
+      <p id="authHeaderSub">Don't have an account?</p>
+      <button type="button" class="auth-toggle-btn" id="authToggleBtn">Register</button>
+    </div>
+
+    <div class="auth-body">
+      <div class="authTabs" id="authTabsReal">
+        <button type="button" data-authtab="login" aria-current="true">Sign in</button>
+        <button type="button" data-authtab="signup">Create account</button>
+      </div>
+
+      <form id="loginForm" class="authForm">
+        <h3 class="auth-form-title">Login</h3>
+        <div class="auth-field">
+          <input type="email" id="li-email" required placeholder="Email" aria-label="Email">
+          <span class="field-icon"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></span>
+        </div>
+        <div class="auth-field">
+          <input type="password" id="li-pass" required placeholder="Password" aria-label="Password">
+          <span class="field-icon"><svg class="ic" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg></span>
+        </div>
+        <button type="button" class="forgot-link" id="forgotLink">Forgot password?</button>
+        <button class="primary auth-submit" type="submit">Login</button>
+      </form>
+
+      <form id="signupForm" class="authForm" hidden>
+        <h3 class="auth-form-title">Create account</h3>
+        <div class="auth-field">
+          <input type="text" id="su-name" required placeholder="Full name" aria-label="Full name">
+          <span class="field-icon"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></span>
+        </div>
+        <div class="auth-field">
+          <input type="text" inputmode="tel" id="su-phone" required placeholder="Phone number" aria-label="Phone number">
+          <span class="field-icon"><svg class="ic" viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 015 6a2 2 0 010-2z"/></svg></span>
+        </div>
+        <div class="auth-field">
+          <input type="text" id="su-brand" placeholder="Business / brand name (optional)" aria-label="Business or brand name, optional">
+          <span class="field-icon"><svg class="ic" viewBox="0 0 24 24"><rect x="4" y="9" width="16" height="11" rx="1"/><path d="M9 9V6a3 3 0 016 0v3"/></svg></span>
+        </div>
+        <div class="auth-field">
+          <input type="text" id="su-bank" required placeholder="Payout bank name" aria-label="Payout bank name">
+          <span class="field-icon"><svg class="ic" viewBox="0 0 24 24"><path d="M3 10l9-6 9 6"/><path d="M5 10v9h14v-9M9 19v-6h6v6"/></svg></span>
+        </div>
+        <div class="auth-field">
+          <input type="text" inputmode="numeric" id="su-bankacct" required placeholder="Payout account number" aria-label="Payout account number">
+          <span class="field-icon"><svg class="ic" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span>
+        </div>
+        <div class="auth-field">
+          <input type="email" id="su-email" required placeholder="Email" aria-label="Email">
+          <span class="field-icon"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></span>
+        </div>
+        <div class="auth-field">
+          <input type="password" id="su-pass" required placeholder="Password" aria-label="Password">
+          <span class="field-icon"><svg class="ic" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg></span>
+        </div>
+        <button class="primary auth-submit" type="submit">Create account</button>
+      </form>
+
+      <div class="social-divider"><span>or continue with</span></div>
+      <div class="social-row">
+        <div id="googleSignInBtn" class="social-icon-slot"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+/* ============================================================
+   Standalone login/signup — extracted from ShedShare. Same markup,
+   CSS and logic as the real app's auth panel; this file has no
+   dependency on the rest of it. Swap API_BASE in for a real backend
+   the same way as the main app — see BACKEND_PROMPT.md, "Auth".
+   ============================================================ */
+const API_BASE = "";
+const ADMIN_EMAIL = "admin@shedshare.app"; // mock only: sign in with this email to preview admin
+const GOOGLE_CLIENT_ID = ""; // from Google Cloud Console — see BACKEND_PROMPT.md, "Google Sign-In"
+
+function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+let csrfToken = "";
+async function getCsrfToken() {
+  if (csrfToken) return csrfToken;
+  const response = await fetch(API_BASE + "/api/csrf", { credentials: "include", cache: "no-store" });
+  if (!response.ok) throw new Error("Unable to initialize request security.");
+  csrfToken = (await response.json()).csrfToken;
+  return csrfToken;
+}
+async function api(path, options = {}) {
+  if (!API_BASE) return mockRouter(path, options);
+  try {
+    const method = String(options.method || "GET").toUpperCase();
+    const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+    if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) headers["X-CSRF-Token"] = await getCsrfToken();
+    const res = await fetch(API_BASE + path, { ...options, credentials: "include", headers });
+    let data = null;
+    try { data = await res.json(); } catch (_error) {}
+    if (!res.ok) return { error: (data && data.error) || `Request failed (${res.status})`, code: data?.code };
+    return data;
+  } catch (_error) {
+    showToast("Can't reach the server");
+    return { error: "network" };
+  }
+}
+function mockRouter(path, options) {
+  const method = options.method || "GET";
+  const body = options.body ? JSON.parse(options.body) : {};
+  if (path === "/api/auth/login" && method === "POST") {
+    const email = (body.email || "you@example.com").toLowerCase();
+    return { user: { name: email.split("@")[0], email, isAdmin: email === ADMIN_EMAIL } };
+  }
+  if (path === "/api/auth/signup" && method === "POST") {
+    const email = (body.email || "you@example.com").toLowerCase();
+    return { user: { name: body.name || "You", phone: body.phone || "", brand: body.brand || "", bankName: body.bankName || "", accountNumber: body.accountNumber || "", email, isAdmin: email === ADMIN_EMAIL } };
+  }
+  return {};
+}
+
+let session = null;
+function startSession(result, message) {
+  if (!result || result.error) { showToast((result && result.error) || "Something went wrong"); return; }
+  session = result.user ? { user: result.user } : null;
+  if (!session) return showToast("The server did not return a signed-in profile.");
+  showToast(message);
+  // The server keeps the session JWT in an HttpOnly cookie; only the profile stays in memory.
+}
+
+/* ---------- tabs / header toggle ---------- */
+document.querySelectorAll(".authTabs button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".authTabs button").forEach(b => b.setAttribute("aria-current", "false"));
+    btn.setAttribute("aria-current", "true");
+    document.getElementById("loginForm").hidden = btn.dataset.authtab !== "login";
+    document.getElementById("signupForm").hidden = btn.dataset.authtab !== "signup";
+  });
+});
+function updateAuthHeader() {
+  const loginActive = document.querySelector('.authTabs button[data-authtab="login"]').getAttribute("aria-current") === "true";
+  document.getElementById("authHeaderTitle").textContent = loginActive ? "Hello, welcome" : "Join ShedShare";
+  document.getElementById("authHeaderSub").textContent = loginActive ? "Don't have an account?" : "Already have an account?";
+  document.getElementById("authToggleBtn").textContent = loginActive ? "Register" : "Sign in";
+}
+document.getElementById("authToggleBtn").addEventListener("click", () => {
+  const loginActive = document.querySelector('.authTabs button[data-authtab="login"]').getAttribute("aria-current") === "true";
+  document.querySelector(`.authTabs button[data-authtab="${loginActive ? "signup" : "login"}"]`).click();
+  updateAuthHeader();
+});
+document.getElementById("forgotLink").addEventListener("click", () => showToast("Password reset isn't built yet"));
+
+/* ---------- forms ---------- */
+document.getElementById("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = document.getElementById("li-email").value.trim();
+  const password = document.getElementById("li-pass").value;
+  startSession(await api("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }), "Signed in");
+});
+document.getElementById("signupForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const body = {
+    name: document.getElementById("su-name").value.trim(),
+    phone: document.getElementById("su-phone").value.trim(),
+    brand: document.getElementById("su-brand").value.trim(),
+    bankName: document.getElementById("su-bank").value.trim(),
+    accountNumber: document.getElementById("su-bankacct").value.trim(),
+    email: document.getElementById("su-email").value.trim(),
+    password: document.getElementById("su-pass").value
+  };
+  startSession(await api("/api/auth/signup", { method: "POST", body: JSON.stringify(body) }), "Account created");
+});
+
+/* ---------- Google sign-in ---------- */
+function handleGoogleCredential(response) {
+  // Production Google credentials are verified by the API, which sets the HttpOnly session cookie.
+  if (API_BASE) {
+    api("/api/auth/google", { method: "POST", body: JSON.stringify({ credential: response.credential }) })
+      .then(result => startSession(result, "Signed in with Google"));
+    return;
+  }
+  // Standalone preview only: this local demo does not create a server session.
+  try {
+    const payload = JSON.parse(atob(response.credential.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+    if (!payload.email) throw new Error("no email in credential");
+    startSession({ user: { name: payload.name || payload.email.split("@")[0], email: payload.email, isAdmin: payload.email.toLowerCase() === ADMIN_EMAIL } }, "Signed in with Google");
+  } catch (e) {
+    showToast("Couldn't read the Google sign-in response");
+  }
+}
+function initGoogleSignIn() {
+  const container = document.getElementById("googleSignInBtn");
+  if (!GOOGLE_CLIENT_ID || typeof google === "undefined" || !google.accounts || !google.accounts.id) {
+    container.innerHTML = `<button type="button" class="social-icon-btn" id="googleNotReady" aria-label="Continue with Google">G</button>`;
+    document.getElementById("googleNotReady").addEventListener("click", () => showToast("Google sign-in isn't connected yet"));
+    return;
+  }
+  google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleGoogleCredential });
+  google.accounts.id.renderButton(container, { type: "icon", shape: "circle", size: "large" });
+}
+window.addEventListener("load", initGoogleSignIn);
+</script>
+</body>
+</html>

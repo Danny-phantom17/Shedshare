@@ -7,7 +7,15 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "migrate": "node scripts/migrate.js"
+    "migrate": "node scripts/migrate.js",
+    "setup:admin": "node scripts/setup-admin.js",
+    "setup:web-push": "node scripts/setup-web-push.js",
+    "check": "npm audit && npm outdated",
+    "backup:db": "node scripts/backup-db.js",
+    "restore:db": "node scripts/restore-db.js",
+    "restore:db:test": "node scripts/restore-db.js --test",
+    "preflight:production": "node scripts/production-preflight.js",
+    "test": "node test/budget-search.test.js && node test/rental-periods-inventory.test.js && node test/rental-trust.test.js && node test/rental-trust-admin.test.js && node test/cloudinary-photo.test.js && node test/listing-photo-selection.test.js && node test/media-photo-upload.test.js && node test/storage-cleanup.test.js && node test/rent-again.test.js && node test/referrals.test.js && node test/production-readiness.test.js && node test/event-plans.test.js && node test/negotiated-offers.test.js && node test/listing-moderation.test.js && node test/rental-receipts.test.js"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -20,10 +28,11 @@
     "express": "^5.1.0",
     "express-rate-limit": "^8.1.0",
     "ffprobe-static": "^3.1.0",
-    "jsonwebtoken": "^9.0.2",
     "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
     "mysql2": "^3.14.0",
+    "web-push": "^3.6.7",
     "zod": "^3.24.2"
   }
 }

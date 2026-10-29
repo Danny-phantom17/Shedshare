@@ -6,6 +6,7 @@ const os = require("node:os");
 const path = require("node:path");
 const { execFile } = require("node:child_process");
 const { promisify } = require("node:util");
+const { CLEANUP_LOCK } = require("./storage-cleanup");
 const express = require("express");
 const multer = require("multer");
 const ffprobe = require("ffprobe-static");
@@ -96,8 +97,8 @@ function createStorageAdapter(configuration) {
   });
 
   return {
-    async putVideo({ body, contentType, extension }) {
-      const key = `items/videos/${new Date().toISOString().slice(0, 10)}/${crypto.randomUUID()}.${extension}`;
+    async putVideo({ body, contentType, extension, key: requestedKey }) {
+      const key = requestedKey || `items/videos/${new Date().toISOString().slice(0, 10)}/${crypto.randomUUID()}.${extension}`;
       await client.send(new PutObjectCommand({
         Bucket: configuration.bucket,
         Key: key,
@@ -199,6 +200,28 @@ function parseItemId(value) {
   return /^\d+$/.test(String(value || "")) ? String(value) : null;
 }
 
+function videoObjectKey(value, { supabase, configuration }) {
+  try {
+    if (typeof value !== "string") return null;
+    if (!/^https?:\/\//i.test(value)) return value.startsWith("items/") && !value.split("/").includes("..") ? value : null;
+    const url = new URL(value);
+    if (supabase) {
+      const origin = new URL(process.env.SUPABASE_URL).origin;
+      const bucket = process.env.SUPABASE_STORAGE_BUCKET || "shedshare-media";
+      const prefix = `/storage/v1/object/public/${encodeURIComponent(bucket)}/`;
+      if (url.origin !== origin || !url.pathname.startsWith(prefix)) return null;
+      const key = decodeURIComponent(url.pathname.slice(prefix.length));
+      return key.startsWith("items/") && !key.split("/").includes("..") ? key : null;
+    }
+    if (configuration?.configured && url.origin === new URL(configuration.publicBaseUrl).origin) {
+      const prefix = new URL(configuration.publicBaseUrl).pathname.replace(/\/$/, "");
+      const key = decodeURIComponent(url.pathname.slice(prefix.length).replace(/^\//, ""));
+      return key.startsWith("items/") && !key.split("/").includes("..") ? key : null;
+    }
+  } catch (_error) { return null; }
+  return null;
+}
+
 function runUpload(request, response) {
   return new Promise((resolve, reject) => {
     upload.single("video")(request, response, (error) => {
@@ -269,8 +292,8 @@ function createVideoUploadsRouter({ pool, authenticate, supabase }) {
 
     const connection = await pool.getConnection();
     const storage = supabase ? {
-      async putVideo({ body, contentType, extension }) {
-        const key = `items/${request.user.id}/${crypto.randomUUID()}.${extension}`;
+      async putVideo({ body, contentType, extension, key: requestedKey }) {
+        const key = requestedKey || `items/${request.user.id}/${crypto.randomUUID()}.${extension}`;
         const { error } = await supabase.storage.from(process.env.SUPABASE_STORAGE_BUCKET || "shedshare-media").upload(key, body, { contentType, upsert: false, cacheControl: "31536000" });
         if (error) throw error;
         const { data } = supabase.storage.from(process.env.SUPABASE_STORAGE_BUCKET || "shedshare-media").getPublicUrl(key);
@@ -279,11 +302,17 @@ function createVideoUploadsRouter({ pool, authenticate, supabase }) {
       async delete(key) { const { error } = await supabase.storage.from(process.env.SUPABASE_STORAGE_BUCKET || "shedshare-media").remove([key]); if (error) throw error; }
     } : createStorageAdapter(configuration);
     let storedObject = null;
+    let uploadLock = false;
+    let videoBucket = "";
+    let videoProvider = "";
 
     try {
+      const [lockRows] = await connection.execute("SELECT GET_LOCK(?,10) AS acquired", [CLEANUP_LOCK]);
+      if (Number(lockRows[0]?.acquired) !== 1) return response.status(503).json({ error: "Media maintenance is running. Retry the upload shortly." });
+      uploadLock = true;
       await connection.beginTransaction();
       const [rows] = await connection.execute(
-        "SELECT owner_id FROM items WHERE id = ? LIMIT 1 FOR UPDATE",
+        "SELECT owner_id,video FROM items WHERE id = ? LIMIT 1 FOR UPDATE",
         [itemId]
       );
 
@@ -297,16 +326,29 @@ function createVideoUploadsRouter({ pool, authenticate, supabase }) {
         return response.status(403).json({ error: "That isn't your listing." });
       }
 
+      const previousVideoKey = videoObjectKey(rows[0].video, { supabase, configuration });
+      if (previousVideoKey) await connection.execute("INSERT INTO storage_cleanup_asset_registry(item_id,provider,bucket_name,object_key,asset_type) VALUES(?,?,?,?, 'video') ON DUPLICATE KEY UPDATE item_id=VALUES(item_id)", [itemId, supabase ? "supabase" : "s3", supabase ? (process.env.SUPABASE_STORAGE_BUCKET || "shedshare-media") : configuration.bucket, previousVideoKey]);
+
+      videoBucket = supabase ? (process.env.SUPABASE_STORAGE_BUCKET || "shedshare-media") : configuration.bucket;
+      videoProvider = supabase ? "supabase" : "s3";
+      const predictedKey = supabase ? `items/${request.user.id}/${crypto.randomUUID()}.${container.extension}` : `items/videos/${new Date().toISOString().slice(0, 10)}/${crypto.randomUUID()}.${container.extension}`;
+      await pool.execute("INSERT INTO storage_cleanup_upload_leases(item_id,provider,bucket_name,object_key,asset_type,status) VALUES(?,?,?,?, 'video','pending')", [itemId, videoProvider, videoBucket, predictedKey]);
       storedObject = await storage.putVideo({
         body: request.file.buffer,
         contentType: container.contentType,
-        extension: container.extension
+        extension: container.extension,
+        key: predictedKey
       });
 
       await connection.execute(
         "UPDATE items SET video = ? WHERE id = ? AND owner_id = ?",
         [storedObject.url, itemId, request.user.id]
       );
+      await connection.execute(
+        "INSERT INTO storage_cleanup_asset_registry(item_id,provider,bucket_name,object_key,asset_type) VALUES(?,?,?,?, 'video') ON DUPLICATE KEY UPDATE item_id=VALUES(item_id),asset_type='video'",
+        [itemId, videoProvider, videoBucket, storedObject.key]
+      );
+      await connection.execute("UPDATE storage_cleanup_upload_leases SET status='attached' WHERE provider=? AND bucket_name=? AND object_key=?", [videoProvider, videoBucket, storedObject.key]);
       await connection.commit();
 
       return response.status(200).json({ video: storedObject.url });
@@ -320,6 +362,7 @@ function createVideoUploadsRouter({ pool, authenticate, supabase }) {
       if (storedObject) {
         try {
           await storage.delete(storedObject.key);
+          await pool.execute("UPDATE storage_cleanup_upload_leases SET status='removed' WHERE provider=? AND bucket_name=? AND object_key=?", [videoProvider, videoBucket, storedObject.key]);
         } catch (cleanupError) {
           console.error("Cleaning up failed video upload failed:", cleanupError.message);
         }
@@ -328,6 +371,7 @@ function createVideoUploadsRouter({ pool, authenticate, supabase }) {
       console.error("Uploading item video failed:", error.message);
       return response.status(500).json({ error: "Unable to upload video." });
     } finally {
+      if (uploadLock) { try { await connection.execute("SELECT RELEASE_LOCK(?)", [CLEANUP_LOCK]); } catch (error) { console.error("Releasing video upload lock failed:", error.message); } }
       connection.release();
     }
   });
@@ -338,31 +382,40 @@ function createVideoUploadsRouter({ pool, authenticate, supabase }) {
       return response.status(400).json({ error: "Invalid item id." });
     }
 
+    const connection = await pool.getConnection();
+    let locked = false;
     try {
-      const [result] = await pool.execute(
-        "UPDATE items SET video = NULL WHERE id = ? AND owner_id = ?",
-        [itemId, request.user.id]
-      );
-
-      if (result.affectedRows === 0) {
-        const [rows] = await pool.execute(
-          "SELECT owner_id FROM items WHERE id = ? LIMIT 1",
-          [itemId]
-        );
-        if (rows.length === 0) {
-          return response.status(404).json({ error: "Item not found." });
+      const [lockRows] = await connection.execute("SELECT GET_LOCK(?,10) AS acquired", [CLEANUP_LOCK]);
+      if (Number(lockRows[0]?.acquired) !== 1) return response.status(503).json({ error: "Media maintenance is running. Retry shortly." });
+      locked = true;
+      await connection.beginTransaction();
+      const [rows] = await connection.execute("SELECT owner_id,video FROM items WHERE id=? LIMIT 1 FOR UPDATE", [itemId]);
+      if (!rows.length) { await connection.rollback(); return response.status(404).json({ error: "Item not found." }); }
+      if (String(rows[0].owner_id) !== String(request.user.id)) { await connection.rollback(); return response.status(403).json({ error: "That isn't your listing." }); }
+      const videoUrl = rows[0].video;
+      if (videoUrl) {
+        const videoConfig = storageConfiguration();
+        const key = videoObjectKey(videoUrl, { supabase, configuration: videoConfig });
+        const provider = supabase ? "supabase" : "s3";
+        const bucket = supabase ? (process.env.SUPABASE_STORAGE_BUCKET || "shedshare-media") : videoConfig.bucket || "";
+        if (key) {
+          await connection.execute("INSERT INTO storage_cleanup_asset_registry(item_id,provider,bucket_name,object_key,asset_type) VALUES(?,?,?,?, 'video') ON DUPLICATE KEY UPDATE item_id=VALUES(item_id),asset_type='video'", [itemId, provider, bucket, key]);
         }
-        return response.status(403).json({ error: "That isn't your listing." });
       }
-
+      await connection.execute("UPDATE items SET video=NULL WHERE id=? AND owner_id=?", [itemId, request.user.id]);
+      await connection.commit();
       return response.status(200).json({ video: "" });
     } catch (error) {
+      try { await connection.rollback(); } catch (_error) {}
       console.error("Removing item video failed:", error.message);
       return response.status(500).json({ error: "Unable to remove video." });
+    } finally {
+      if (locked) { try { await connection.execute("SELECT RELEASE_LOCK(?)", [CLEANUP_LOCK]); } catch (error) { console.error("Releasing video cleanup lock failed:", error.message); } }
+      connection.release();
     }
   });
 
   return router;
 }
 
-module.exports = { createVideoUploadsRouter };
+module.exports = { createVideoUploadsRouter, videoObjectKey };
