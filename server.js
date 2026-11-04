@@ -311,21 +311,29 @@ const pushQueueTimer=setInterval(async()=>{
 },15_000);
 pushQueueTimer.unref();
 
-// Serve the local frontend from the API origin so `npm start` runs the full app.
-app.get("/", async (_request, response, next) => {
+// Serve the independent static frontend from the API origin during local development.
+const frontendDirectory = require("node:path").join(__dirname, "frontend");
+const sendFrontendIndex = async (_request, response, next) => {
   try {
-    const html = await fs.readFile(require("node:path").join(__dirname, "index.html"), "utf8");
+    const html = await fs.readFile(require("node:path").join(frontendDirectory, "index.html"), "utf8");
     return response.set("Cache-Control", "no-store").type("html").send(html.replaceAll("__CSP_NONCE__", response.locals.cspNonce));
   } catch (error) { return next(error); }
+};
+app.get(["/", "/index.html"], sendFrontendIndex);
+app.get("/config.js", (_request, response) => {
+  const configuredApiBase = String(process.env.SHEDSHARE_API_BASE_URL || "").trim().replace(/\/+$/, "");
+  const apiBaseUrl = /^https:\/\//i.test(configuredApiBase) ? configuredApiBase : "";
+  return response.set("Cache-Control", "no-store").type("application/javascript")
+    .send(`window.SHEDSHARE_CONFIG = Object.freeze({ apiBaseUrl: ${JSON.stringify(apiBaseUrl)} });`);
 });
-app.get("/style.css", (_request, response) => response.set("Cache-Control", "no-store").sendFile(require("node:path").join(__dirname, "style.css")));
-app.get("/script.js", (_request, response) => response.set("Cache-Control", "no-store").sendFile(require("node:path").join(__dirname, "script.js")));
-app.get("/manifest.json", (_request, response) => response.set("Cache-Control", "no-cache").type("application/manifest+json").sendFile(require("node:path").join(__dirname, "manifest.json")));
-app.get("/service-worker.js", (_request, response) => response.set("Cache-Control", "no-cache").type("application/javascript").sendFile(require("node:path").join(__dirname, "service-worker.js")));
-app.get("/icons/:icon", (request, response, next) => {
-  if (!/^icon-(?:192|512)\.png$/.test(request.params.icon)) return response.sendStatus(404);
-  return response.set("Cache-Control", "public, max-age=86400").sendFile(require("node:path").join(__dirname, "icons", request.params.icon), (error) => { if (error) next(error); });
-});
+app.use(require("express").static(frontendDirectory, {
+  index: false,
+  setHeaders(response, filePath) {
+    const fileName = require("node:path").basename(filePath);
+    if (["config.js", "script.js", "style.css", "listing-photo-selection.js"].includes(fileName)) response.setHeader("Cache-Control", "no-store");
+    else if (["manifest.json", "service-worker.js"].includes(fileName)) response.setHeader("Cache-Control", "no-cache");
+  }
+}));
 
 app.get("/api/health", async (_request, response) => {
   try {

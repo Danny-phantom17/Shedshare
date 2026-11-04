@@ -23,7 +23,9 @@ const PREVIEW_MODE = new URLSearchParams(window.location.search).get("preview");
 const REFERRAL_CODE_FROM_LINK = new URLSearchParams(window.location.search).get("ref") || "";
 const USER_PREVIEW = PREVIEW_MODE === "user";
 const ADMIN_PREVIEW = PREVIEW_MODE === "admin";
-const API_BASE = PREVIEW_MODE ? "" : window.location.protocol === "file:" ? "http://localhost:3000" : window.location.origin; // local frontend and API share one origin; set the deployed API origin here when hosting the frontend separately
+const configuredApiBaseValue = String(window.SHEDSHARE_CONFIG?.apiBaseUrl || "").trim();
+const configuredApiBase = configuredApiBaseValue.startsWith("__") ? "" : configuredApiBaseValue.replace(/\/+$/, "");
+const API_BASE = PREVIEW_MODE ? "" : configuredApiBase || (window.location.protocol === "file:" ? "http://localhost:3000" : window.location.origin);
 const PLATFORM_FEE_PERCENT = 15; // platform cut of the rental fee (server is the source of truth)
 const MAX_DISCOUNT_NAIRA = 500; // renter may go at most this far below the listed per-unit price
 const MAX_VIDEO_MB = 20; // demo-only cap — see the Video note in BACKEND_PROMPT.md before shipping real uploads

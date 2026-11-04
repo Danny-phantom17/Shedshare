@@ -151,6 +151,7 @@ button.primary{width:100%; background:var(--accent); color:var(--accent-ink); bo
 <div class="toast" id="toast"></div>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="/config.js"></script>
 <script>
 /* ============================================================
    Standalone login/signup — extracted from ShedShare. Same markup,
@@ -158,7 +159,7 @@ button.primary{width:100%; background:var(--accent); color:var(--accent-ink); bo
    dependency on the rest of it. Swap API_BASE in for a real backend
    the same way as the main app — see BACKEND_PROMPT.md, "Auth".
    ============================================================ */
-const API_BASE = "";
+const API_BASE = String(window.SHEDSHARE_CONFIG?.apiBaseUrl || "").trim().replace(/\/+$/, "") || window.location.origin;
 const ADMIN_EMAIL = "admin@shedshare.app"; // mock only: sign in with this email to preview admin
 const GOOGLE_CLIENT_ID = ""; // from Google Cloud Console — see BACKEND_PROMPT.md, "Google Sign-In"
 
