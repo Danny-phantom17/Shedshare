@@ -18,7 +18,7 @@
     "test": "node test/budget-search.test.js && node test/rental-periods-inventory.test.js && node test/rental-trust.test.js && node test/rental-trust-admin.test.js && node test/cloudinary-photo.test.js && node test/listing-photo-selection.test.js && node test/media-photo-upload.test.js && node test/storage-cleanup.test.js && node test/rent-again.test.js && node test/referrals.test.js && node test/production-readiness.test.js && node test/event-plans.test.js && node test/negotiated-offers.test.js && node test/listing-moderation.test.js && node test/rental-receipts.test.js"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.0.0"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.908.0",
