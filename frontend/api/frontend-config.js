@@ -1,5 +1,8 @@
 module.exports = function handler(_request, response) {
-  const apiBaseUrl = String(process.env.SHEDSHARE_API_BASE_URL || "").trim().replace(/\/+$/, "");
+  const productionApiOrigin = process.env.VERCEL_ENV === "production"
+    ? "https://shedshare-production.up.railway.app"
+    : "";
+  const apiBaseUrl = String(process.env.SHEDSHARE_API_BASE_URL || productionApiOrigin).trim().replace(/\/+$/, "");
   response.setHeader("Content-Type", "application/javascript; charset=utf-8");
   response.setHeader("Cache-Control", "no-store");
   response.setHeader("X-Content-Type-Options", "nosniff");
