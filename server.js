@@ -219,7 +219,7 @@ app.get("/api/config", async (_request, response) => {
   const externalSearchDiagnostic = !mapsEnabled ? "Nearby business search is off because Geoapify maps are turned off in admin settings." : !externalSearchEnabled ? "External business search is disabled. Set EXTERNAL_SEARCH_ENABLED=true to enable it." : !getGoogleMapsPlacesServerKey() ? "External business search is enabled but GOOGLE_MAPS_PLACES_SERVER_KEY is missing." : "External search is enabled. If search fails, check the Places API key restrictions and daily quota.";
   const aiSettings = await getAiControlState(pool);
    const cloudinaryPhoto= require("./cloudinary-photo").cloudinaryConfig();
-   response.json({ googleClientId: authMode === "local" ? "" : (process.env.GOOGLE_CLIENT_ID || ""), mapsEnabled, mapTilesKey:mapsBrowserKey, mapsDiagnostic: mapsEnabled ? mapsDiagnostic : "Maps are turned off by the ShedShare administrator.", authMode, paymentMode:getPaymentMode(), paystackAvailable:getPaymentMode()==="paystack"&&!paystackConfigurationError(), externalSearchEnabled, minListingsForExternal, externalSearchDiagnostic, aiAvailable: aiSettings.enabled, cloudinaryPhotoEnhancementAvailable:cloudinaryPhoto.enabled, cloudinaryPhotoEnhancementConfigured:cloudinaryPhoto.configured, privacyAndTermsNotice:privacyAndTermsNotice(),emailNotificationsConfigured:Boolean(process.env.EMAIL_PROVIDER_URL&&process.env.EMAIL_PROVIDER_API_KEY),pushNotificationsConfigured:webPushConfigured,pushPublicKey:webPushConfigured?process.env.WEB_PUSH_PUBLIC_KEY:"" });
+   response.json({ googleClientId: authMode === "local" ? "" : (process.env.GOOGLE_CLIENT_ID || ""), mapsEnabled, mapTilesKey:mapsBrowserKey, mapsDiagnostic: mapsEnabled ? mapsDiagnostic : "Maps are turned off by the ShedShare administrator.", authMode, paymentMode:getPaymentMode(), paystackAvailable:require("./payment-mode").isPaystackAvailable(), externalSearchEnabled, minListingsForExternal, externalSearchDiagnostic, aiAvailable: aiSettings.enabled, cloudinaryPhotoEnhancementAvailable:cloudinaryPhoto.enabled, cloudinaryPhotoEnhancementConfigured:cloudinaryPhoto.configured, privacyAndTermsNotice:privacyAndTermsNotice(),emailNotificationsConfigured:Boolean(process.env.EMAIL_PROVIDER_URL&&process.env.EMAIL_PROVIDER_API_KEY),pushNotificationsConfigured:webPushConfigured,pushPublicKey:webPushConfigured?process.env.WEB_PUSH_PUBLIC_KEY:"" });
 });
 app.use("/api/ai", createAiRouter({ authenticate: auth.authenticate, pool }));
 app.use("/api", createTestimonialsRouter({ pool, authenticate: auth.authenticate }));
@@ -367,13 +367,18 @@ app.use((error, _request, response, _next) => {
 });
 
 const server = app.listen(port, () => console.log(`ShedShare API listening on port ${port}`));
+// Railway's existing public domain targets port 3000 while its runtime supplies PORT=8080.
+// Listen on both until the dashboard target port is updated, so either ingress route works.
+const railwayTargetServer = port === 3000 ? null : app.listen(3000, () => console.log("ShedShare API also listening on Railway target port 3000"));
 async function shutDown(signal) {
   console.log(`${signal} received; shutting down.`);
   clearInterval(deliveryFallbackTimer);
   clearInterval(chatRetentionTimer);
   clearInterval(rentalSchedulerTimer);
   clearInterval(pushQueueTimer);
-  server.close(async () => { try { await pool.end(); process.exit(0); } catch (error) { console.error("Shutdown failed:", error.message); process.exit(1); } });
+  const listeners = [server, railwayTargetServer].filter(Boolean);
+  await Promise.all(listeners.map(listener => new Promise(resolve => listener.close(resolve))));
+  try { await pool.end(); process.exit(0); } catch (error) { console.error("Shutdown failed:", error.message); process.exit(1); }
 }
 process.on("SIGINT", () => shutDown("SIGINT"));
 process.on("SIGTERM", () => shutDown("SIGTERM"));

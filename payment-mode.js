@@ -1,7 +1,13 @@
 "use strict";
 
 function getPaymentMode(env = process.env) {
+  const key = String(env.PAYSTACK_SECRET_KEY || "").trim();
+  if (/^sk_(test|live)_/.test(key)) return "paystack";
   return (env.PAYMENT_MODE || "manual").trim().toLowerCase();
+}
+
+function isPaystackAvailable(env = process.env) {
+  return getPaymentMode(env) === "paystack" && !paystackConfigurationError(env);
 }
 
 function paystackConfigurationError(env = process.env) {
@@ -29,4 +35,4 @@ function requireValidPaymentMode(_req, res, next) {
   return next();
 }
 
-module.exports = { getPaymentMode, paystackConfigurationError, requirePaystackMode, requireValidPaymentMode };
+module.exports = { getPaymentMode, paystackConfigurationError, isPaystackAvailable, requirePaystackMode, requireValidPaymentMode };

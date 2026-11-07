@@ -2,12 +2,18 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { getPaymentMode, paystackConfigurationError, requirePaystackMode } = require("../payment-mode");
+const { getPaymentMode, isPaystackAvailable, paystackConfigurationError, requirePaystackMode } = require("../payment-mode");
 
 test("payment mode defaults to manual and accepts a configured manual deployment without Paystack secrets", () => {
   const env = { NODE_ENV: "production", PAYMENT_MODE: "manual" };
   assert.equal(getPaymentMode(env), "manual");
   assert.equal(paystackConfigurationError(env), null);
+});
+
+test("a valid Paystack secret automatically enables checkout and commissions", () => {
+  const env = { NODE_ENV: "production", PAYMENT_MODE: "manual", PAYSTACK_SECRET_KEY: "sk_live_production-secret" };
+  assert.equal(getPaymentMode(env), "paystack");
+  assert.equal(isPaystackAvailable(env), true);
 });
 
 test("manual mode middleware rejects direct backend initialization requests", () => {

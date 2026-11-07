@@ -8,7 +8,7 @@ const { z } = require("zod");
 const deliveryConfig = require("./delivery-config");
 const { ensureDeliveryConversations } = require("./chat");
 const { createCheckoutRateLimiter } = require("./checkout-rate-limit");
-const { requirePaystackMode } = require("./payment-mode");
+const { isPaystackAvailable, requirePaystackMode } = require("./payment-mode");
 const id = z.string().regex(/^\d+$/, "Invalid id.");
 const activeTracking = ["awaiting_collection", "collected", "en_route", "arrived", "delivered_awaiting_confirmation"];
 function fail(res, status, error) { return res.status(status).json({ error }); }
@@ -162,7 +162,7 @@ function createDispatchRouter({ pool, authenticate, supabase }) {
       if (!payout[0]?.subaccount_code || delivery[0].rental_delivery_method !== "rider_delivery") { await c.rollback(); return fail(res, 409, "A connected Paystack payout account and rider delivery booking are required."); }
       const deliveryFeeKobo = Math.round(quote.data.deliveryFee * 100);
       const [commissionRows] = await c.execute("SELECT setting_value FROM shedshare_settings WHERE setting_key='rider_commission_percent' LIMIT 1");
-      const commissionPercent = Number(commissionRows[0]?.setting_value ?? 5);
+      const commissionPercent = isPaystackAvailable() ? Number(commissionRows[0]?.setting_value ?? 5) : 0;
       if(!Number.isFinite(commissionPercent)||commissionPercent<0||commissionPercent>100){await c.rollback();return fail(res,503,"Rider commission settings are invalid. Contact ShedShare support.");}
       const platformFee = Math.round(deliveryFeeKobo*commissionPercent/100), riderPayout = deliveryFeeKobo-platformFee;
       const [claim] = await c.execute("UPDATE deliveries SET rider_id=?,rider_commission_percent=?,status='awaiting_collection',tracking_ends_at=DATE_ADD(UTC_TIMESTAMP(),INTERVAL ? HOUR) WHERE id=? AND rider_id IS NULL AND status='awaiting_rider'", [req.user.id, commissionPercent, deliveryConfig.maxTrackingHours, deliveryId.data]);
@@ -174,7 +174,7 @@ function createDispatchRouter({ pool, authenticate, supabase }) {
       if(!delivery[0].rider_handover_code_hash){const code=String(crypto.randomInt(1000,10000)),hash=crypto.createHmac("sha256",process.env.JWT_SECRET).update(`${deliveryId.data}:${code}`).digest("hex"),[rental]=await c.execute("SELECT renter_id FROM rentals WHERE id=?",[delivery[0].rental_id]);await c.execute("UPDATE deliveries SET delivery_pin=?,rider_handover_code_hash=? WHERE id=?",[code,hash,deliveryId.data]);if(rental.length)await c.execute("INSERT INTO notifications (user_id,type,message,related_id) VALUES (?,'delivery_handover_code',?,?)",[rental[0].renter_id,`Give your rider this 4-digit hand-over code when the item arrives: ${code}`,deliveryId.data]);}
       try { await ensureDeliveryConversations(c, deliveryId.data, req.user.id); }
       catch (chatError) { console.error("Delivery accepted; chat setup failed:", chatError.message); }
-      await c.execute("INSERT INTO notifications (user_id,type,message,related_id) VALUES (?,'rider_delivery_quote',?,?)", [delivery[0].renter_id, `A rider accepted your delivery and quoted ₦${(deliveryFeeKobo/100).toLocaleString("en-NG",{minimumFractionDigits:2})}. Pay through ShedShare to confirm. ShedShare keeps ${commissionPercent}%; the rider receives ${100-commissionPercent}%.`, deliveryId.data]);
+      await c.execute("INSERT INTO notifications (user_id,type,message,related_id) VALUES (?,'rider_delivery_quote',?,?)", [delivery[0].renter_id, `A rider accepted your delivery and quoted ₦${(deliveryFeeKobo/100).toLocaleString("en-NG",{minimumFractionDigits:2})}. Pay through ShedShare to confirm.${commissionPercent > 0 ? ` ShedShare keeps ${commissionPercent}%; the rider receives ${100-commissionPercent}%.` : " The rider receives the full quoted fee."}`, deliveryId.data]);
       await c.commit(); return res.json({ id: deliveryId.data, status: "awaiting_collection", deliveryFee: deliveryFeeKobo/100, commissionPercent, platformFee: platformFee/100, riderPayout: riderPayout/100 });
     } catch (e) { await c.rollback(); console.error("Accepting delivery offer failed:", e.message); return fail(res, 500, "Unable to accept this delivery."); }
     finally { c.release(); }

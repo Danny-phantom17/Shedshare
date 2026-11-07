@@ -266,7 +266,8 @@ function createAdminRouter({ pool, authenticate, securityEvents, supabase }) {
     try {
       const [rows] = await pool.execute("SELECT setting_key,setting_value FROM shedshare_settings WHERE setting_key IN ('rental_commission_percent','rider_commission_percent')");
       const settings = Object.fromEntries(rows.map(row => [row.setting_key, Number(row.setting_value)]));
-      return res.json({ rentalPercent: settings.rental_commission_percent ?? 15, riderPercent: settings.rider_commission_percent ?? 5 });
+      const enabled = require("./payment-mode").isPaystackAvailable();
+      return res.json({ rentalPercent: enabled ? settings.rental_commission_percent ?? 15 : 0, riderPercent: enabled ? settings.rider_commission_percent ?? 5 : 0, commissionsEnabled: enabled });
     } catch (error) { console.error("Loading commission settings failed:", error.message); return res.status(500).json({ error: "Unable to load commission settings." }); }
   });
 
