@@ -25,6 +25,15 @@ test("accepts a complete production configuration", () => {
   assert.deepEqual(productionReadinessErrors(validProductionEnv()), []);
 });
 
+test("accepts current Supabase publishable and secret key variable names", () => {
+  const env = validProductionEnv();
+  delete env.SUPABASE_ANON_KEY;
+  delete env.SUPABASE_SERVICE_ROLE_KEY;
+  env.SUPABASE_PUBLISHABLE_KEY = "sb_publishable_example";
+  env.SUPABASE_SECRET_KEY = "sb_secret_example";
+  assert.deepEqual(productionReadinessErrors(env), []);
+});
+
 test("rejects a test Paystack key for production", () => {
   const env = validProductionEnv();
   env.PAYSTACK_SECRET_KEY = "sk_test_sandbox-value";

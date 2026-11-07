@@ -62,11 +62,13 @@ const pool = mysql.createPool({
   user: process.env.DB_USER, password: process.env.DB_PASSWORD, connectionLimit: Number(process.env.DB_CONNECTION_LIMIT || 10),
   waitForConnections: true, queueLimit: 0, timezone: "Z"
 });
-const supabase = process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY
-  ? createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false } })
+const supabasePublishableKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY;
+const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabase = process.env.SUPABASE_URL && supabasePublishableKey
+  ? createClient(process.env.SUPABASE_URL, supabasePublishableKey, { auth: { persistSession: false, autoRefreshToken: false } })
   : null;
-const supabaseAdmin = process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
-  ? createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } })
+const supabaseAdmin = process.env.SUPABASE_URL && supabaseSecretKey
+  ? createClient(process.env.SUPABASE_URL, supabaseSecretKey, { auth: { persistSession: false, autoRefreshToken: false } })
   : null;
 
 const app = express();
@@ -226,7 +228,7 @@ app.get("/privacy",(_req,res)=>res.type("text/plain").send(privacyAndTermsNotice
 app.get("/terms",(_req,res)=>res.type("text/plain").send(privacyAndTermsNotice()));
 
 app.use("/api/items", require("./cloudinary-photo").createCloudinaryPhotoRouter({pool,authenticate:auth.authenticate}));
-if (supabase && process.env.SUPABASE_SERVICE_ROLE_KEY) app.use("/api/items", createMediaUploadsRouter({ pool, supabase: createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } }), authenticate: auth.authenticate }));
+if (supabase && supabaseSecretKey) app.use("/api/items", createMediaUploadsRouter({ pool, supabase: createClient(process.env.SUPABASE_URL, supabaseSecretKey, { auth: { persistSession: false, autoRefreshToken: false } }), authenticate: auth.authenticate }));
 else app.use("/api/items", (request, response, next) => {
   if (["POST", "PATCH"].includes(request.method) && request.body && ["image", "video"].some((key) => typeof request.body[key] === "string" && /^data:/i.test(request.body[key]))) {
     return response.status(503).json({ error: "Image and video storage is not configured. Set Supabase Storage credentials before uploading media." });

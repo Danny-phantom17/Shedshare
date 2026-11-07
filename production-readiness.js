@@ -21,9 +21,10 @@ function productionReadinessErrors(env = process.env) {
     errors.push("JWT_SECRET must be a non-placeholder secret with at least 32 characters.");
   }
   if (!isHttpsUrl(env.SUPABASE_URL)) errors.push("SUPABASE_URL must be a real HTTPS project URL.");
-  for (const key of ["SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"]) {
-    if (!env[key] || PLACEHOLDER.test(env[key])) errors.push(`${key} must be set to the production Supabase key.`);
-  }
+  const publishableKey = env.SUPABASE_PUBLISHABLE_KEY || env.SUPABASE_ANON_KEY;
+  if (!publishableKey || PLACEHOLDER.test(publishableKey)) errors.push("SUPABASE_PUBLISHABLE_KEY (or legacy SUPABASE_ANON_KEY) must be set to the production Supabase key.");
+  const secretKey = env.SUPABASE_SECRET_KEY || env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!secretKey || PLACEHOLDER.test(secretKey)) errors.push("SUPABASE_SECRET_KEY (or legacy SUPABASE_SERVICE_ROLE_KEY) must be set to the production Supabase key.");
   if (!isHttpsUrl(env.EMAIL_VERIFICATION_REDIRECT_URL)) {
     errors.push("EMAIL_VERIFICATION_REDIRECT_URL must be the deployed HTTPS ShedShare URL.");
   }

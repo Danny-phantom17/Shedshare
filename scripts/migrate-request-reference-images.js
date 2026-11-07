@@ -27,14 +27,15 @@ function getLegacyObjectKey(value, ownerId, supabaseOrigin) {
 }
 
 async function main() {
-  const required = ["DB_HOST", "DB_NAME", "DB_USER", "DB_PASSWORD", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"];
+  const required = ["DB_HOST", "DB_NAME", "DB_USER", "DB_PASSWORD", "SUPABASE_URL"];
   const missing = required.filter((name) => !process.env[name]);
+  if (!process.env.SUPABASE_SECRET_KEY && !process.env.SUPABASE_SERVICE_ROLE_KEY) missing.push("SUPABASE_SECRET_KEY");
   if (missing.length) throw new Error(`Missing required environment variables: ${missing.join(", ")}`);
   if (sourceBucket === privateBucket) throw new Error("The request reference bucket must differ from the public media bucket.");
 
   const supabaseUrl = new URL(process.env.SUPABASE_URL);
   if (supabaseUrl.protocol !== "https:") throw new Error("SUPABASE_URL must use HTTPS.");
-  const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
+  const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
   const pool = mysql.createPool({ host: process.env.DB_HOST, port: Number(process.env.DB_PORT || 3306), database: process.env.DB_NAME, user: process.env.DB_USER, password: process.env.DB_PASSWORD, connectionLimit: 2, timezone: "Z" });
 
   try {

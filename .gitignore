@@ -6,3 +6,4 @@ backups/
 !.env.example
 ShedShare-ad-*.mp4
 /video_review_frames/
+railway.env
