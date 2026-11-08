@@ -2810,17 +2810,34 @@ document.querySelectorAll("#userMoreMenu [data-user-tab],#userMoreMenu [data-use
 });
 
 /* ---------- auth ---------- */
+let authFlow = "login";
+let passwordRecoveryProof = null;
+function showAuthFlow(flow) {
+  authFlow = flow;
+  const views = ["loginForm", "signupForm", "forgotPasswordForm", "resetPasswordForm"];
+  for (const id of views) document.getElementById(id).hidden = true;
+  for (const id of ["passwordRecoverySent", "passwordRecoveryDone", "passwordRecoveryError"]) document.getElementById(id).hidden = true;
+  if (flow === "login") document.getElementById("loginForm").hidden = false;
+  if (flow === "signup") document.getElementById("signupForm").hidden = false;
+  if (flow === "forgot") document.getElementById("forgotPasswordForm").hidden = false;
+  if (flow === "reset") document.getElementById("resetPasswordForm").hidden = false;
+  if (flow === "recovery-sent") document.getElementById("passwordRecoverySent").hidden = false;
+  if (flow === "reset-done") document.getElementById("passwordRecoveryDone").hidden = false;
+  if (flow === "reset-error") document.getElementById("passwordRecoveryError").hidden = false;
+  const normalAuth = flow === "login" || flow === "signup";
+  document.querySelector(".social-divider").hidden = !normalAuth;
+  document.getElementById("googleSignInBtn").hidden = !normalAuth;
+  document.getElementById("authHeaderTitle").textContent = ({ login: "Hello, welcome", signup: "Join ShedShare", forgot: "Forgot password?", "recovery-sent": "Check your email", reset: "Choose a new password", "reset-done": "Password updated", "reset-error": "Recovery link issue" })[flow] || "Hello, welcome";
+  document.getElementById("authHeaderSub").textContent = flow === "signup" ? "Already have an account?" : flow === "login" ? "Don't have an account?" : "";
+  document.getElementById("authToggleBtn").hidden = !normalAuth;
+  if (normalAuth) document.getElementById("authToggleBtn").textContent = flow === "login" ? "Register" : "Sign in";
+  document.querySelectorAll(".authTabs button").forEach(button => button.setAttribute("aria-current", button.dataset.authtab === flow ? "true" : "false"));
+}
 document.querySelectorAll(".authTabs button").forEach(btn => {
   btn.addEventListener("click", () => {
-    document.querySelectorAll(".authTabs button").forEach(b => b.setAttribute("aria-current", "false"));
-    btn.setAttribute("aria-current", "true");
-    document.getElementById("loginForm").hidden = btn.dataset.authtab !== "login";
-    document.getElementById("signupForm").hidden = btn.dataset.authtab !== "signup";
-    const loginActive = btn.dataset.authtab === "login";
-    document.getElementById("authHeaderTitle").textContent = loginActive ? "Hello, welcome" : "Join ShedShare";
-    document.getElementById("authHeaderSub").textContent = loginActive ? "Don't have an account?" : "Already have an account?";
-    document.getElementById("authToggleBtn").textContent = loginActive ? "Register" : "Sign in";
-    if (!document.getElementById("authPanel").hidden) window.shedShareMotion?.enterAuth(document.getElementById("authPanel"));
+    const authPanel = document.getElementById("authPanel");
+    showAuthFlow(btn.dataset.authtab);
+    if (!authPanel.hidden) window.shedShareMotion?.enterAuth(authPanel);
   });
 });
 if (REFERRAL_CODE_FROM_LINK) document.querySelector('[data-authtab="signup"]')?.click();
@@ -2936,6 +2953,51 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
   const password = document.getElementById("li-pass").value;
   startSession(await api("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }), "Signed in");
 });
+document.getElementById("forgotPassword").addEventListener("click", () => {
+  document.getElementById("emailVerificationStatus").hidden = true;
+  document.getElementById("recoveryEmail").value = document.getElementById("li-email").value.trim();
+  showAuthFlow("forgot");
+});
+document.getElementById("forgotPasswordForm").addEventListener("submit", async event => {
+  event.preventDefault();
+  const email = document.getElementById("recoveryEmail").value.trim();
+  const result = await api("/api/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) });
+  if (result?.error) return showToast(result.error);
+  document.getElementById("li-email").value = email;
+  document.getElementById("passwordRecoveryMessage").textContent = result?.message || "If an email-and-password account matches, recovery instructions have been sent. Check your inbox and spam folder.";
+  showAuthFlow("recovery-sent");
+});
+function returnToSignIn() {
+  passwordRecoveryProof = null;
+  document.getElementById("li-pass").value = "";
+  document.getElementById("emailVerificationStatus").hidden = true;
+  showAuthFlow("login");
+}
+for (const id of ["forgotPasswordBack", "passwordRecoverySentBack", "passwordRecoveryDoneBack", "passwordRecoveryErrorBack"]) {
+  document.getElementById(id).addEventListener("click", returnToSignIn);
+}
+document.getElementById("resetPasswordForm").addEventListener("submit", async event => {
+  event.preventDefault();
+  const password = document.getElementById("newPassword").value;
+  const confirmPassword = document.getElementById("confirmNewPassword").value;
+  if (password !== confirmPassword) return showToast("The passwords do not match.");
+  if (!passwordRecoveryProof) return showToast("Open the recovery link from your email again.");
+  const result = await api("/api/auth/reset-password", { method: "POST", body: JSON.stringify({ ...passwordRecoveryProof, password }) });
+  if (result?.error) {
+    if (result.status === 400) {
+      passwordRecoveryProof = null;
+      document.getElementById("passwordRecoveryErrorMessage").textContent = result.error;
+      showAuthFlow("reset-error");
+      return;
+    }
+    return showToast(result.error);
+  }
+  passwordRecoveryProof = null;
+  document.getElementById("newPassword").value = "";
+  document.getElementById("confirmNewPassword").value = "";
+  document.getElementById("passwordRecoveryDoneMessage").textContent = result?.message || "Your password has been updated. Sign in with your email and new password.";
+  showAuthFlow("reset-done");
+});
 async function resendVerificationEmail(email) {
   const address = String(email || document.getElementById("li-email").value || sessionStorage.getItem(ONBOARDING_PENDING_EMAIL_KEY) || "").trim();
   if (!address) return showToast("Enter your email address first.");
@@ -2977,9 +3039,29 @@ function handleGoogleCredential(response) {
 async function finishEmailVerification() {
   const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
   const queryParams = new URLSearchParams(window.location.search);
+  const linkType = hashParams.get("type") || queryParams.get("type") || "";
+  const linkError = hashParams.get("error") || queryParams.get("error") || hashParams.get("error_code") || queryParams.get("error_code");
+  if (linkType === "recovery" || (linkError && (hashParams.get("type") === "recovery" || queryParams.get("type") === "recovery"))) {
+    passwordRecoveryProof = {
+      ...(hashParams.get("token_hash") || queryParams.get("token_hash") ? { token_hash: hashParams.get("token_hash") || queryParams.get("token_hash") } : {}),
+      ...(hashParams.get("access_token") || queryParams.get("access_token") ? { access_token: hashParams.get("access_token") || queryParams.get("access_token") } : {})
+    };
+    const cleanUrl = new URL(window.location.href);
+    for (const key of ["error", "error_code", "error_description", "type", "token_hash", "access_token", "refresh_token", "expires_in", "expires_at", "token_type"]) cleanUrl.searchParams.delete(key);
+    cleanUrl.hash = "";
+    history.replaceState(null, "", cleanUrl.pathname + cleanUrl.search);
+    document.getElementById("authPanel").hidden = false;
+    document.getElementById("emailVerificationStatus").hidden = true;
+    if (!passwordRecoveryProof.token_hash && !passwordRecoveryProof.access_token) {
+      document.getElementById("passwordRecoveryErrorMessage").textContent = "This recovery link is invalid or expired. Request a new password reset email.";
+      showAuthFlow("reset-error");
+    } else showAuthFlow("reset");
+    document.getElementById("authPanel").scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
   const tokenHash = hashParams.get("token_hash");
   const queryTokenHash = queryParams.get("token_hash");
-  const providerError = hashParams.get("error") || queryParams.get("error") || hashParams.get("error_code") || queryParams.get("error_code");
+  const providerError = linkError;
   const singleUseTokenHash=tokenHash||queryTokenHash;
   if (!singleUseTokenHash && !providerError) return;
   const panel = document.getElementById("emailVerificationStatus");
@@ -3020,11 +3102,13 @@ function initGoogleSignIn() {
     if (socialDivider) socialDivider.hidden = true;
     container.hidden = true;
     document.getElementById("resendVerification").hidden = true;
+    document.getElementById("forgotPassword").hidden = true;
     return;
   }
   if (authModeNotice) authModeNotice.hidden = true;
-  if (socialDivider) socialDivider.hidden = false;
-  container.hidden = false;
+  const normalAuthView = authFlow === "login" || authFlow === "signup";
+  if (socialDivider) socialDivider.hidden = !normalAuthView;
+  container.hidden = !normalAuthView;
   document.getElementById("resendVerification").hidden = false;
   if (!GOOGLE_CLIENT_ID) {
     container.innerHTML = `<p class="google-unavailable">Google sign-in isn't configured yet. You can sign in with your email and password.</p>`;

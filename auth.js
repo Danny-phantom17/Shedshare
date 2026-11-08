@@ -24,6 +24,8 @@ function isRateLimitError(error) {
 }
 
 const verificationRateLimitMessage = "Verification emails are temporarily rate-limited. Wait before retrying; for frequent testing, configure custom SMTP in Supabase.";
+const passwordRecoveryRateLimitMessage = "Password reset emails are temporarily rate-limited. Wait 15 minutes before trying again.";
+const passwordRecoveryAcceptedMessage = "If this email has a ShedShare password account, recovery instructions have been sent. Check your inbox and spam folder. If you signed in with Google, use Continue with Google.";
 const signupAcceptedMessage = "If this address can be registered, ShedShare will send verification instructions. If you already have an account, sign in or request a fresh verification link.";
 
 function acceptedSignup(response, email) {
@@ -243,6 +245,81 @@ function createAuth({ pool, jwtSecret, jwtExpiresIn = "1h", supabaseAuth, supaba
       if (/email address not authorized|email_address_not_authorized/i.test(`${error?.code || ""} ${error?.message || ""}`)) return response.status(503).json({ error: "Supabase's built-in email service only sends to approved team addresses. Configure custom SMTP to verify this account." });
       if (/auth_email_rate_limits/.test(error?.message || "")) return response.status(503).json({ error: "Email verification rate limiting is not ready. Apply the account-integrity migration and retry." });
       return response.status(502).json({ error: "Unable to resend the verification email. Check the address and try again later." });
+    }
+  });
+
+  router.post("/forgot-password", async (request, response) => {
+    const parsed = z.object({ email: emailSchema }).strict().safeParse(request.body);
+    if (!parsed.success) return response.status(400).json({ error: parsed.error.issues[0]?.message || "Enter a valid email address." });
+    if (authMode === "local") return response.status(503).json({ error: "Password recovery email is unavailable in local test mode." });
+    if (!supabaseAuth) return response.status(503).json({ error: "Password recovery is not configured." });
+    try {
+      const allowed = await reserveRateLimit(pool, {
+        secret: jwtSecret, email: parsed.data.email, ip: request.ip,
+        emailLimit: 3, ipLimit: 10, purpose: "password-recovery"
+      });
+      if (!allowed) return response.status(429).json({ error: passwordRecoveryRateLimitMessage });
+      const redirectTo = process.env.PASSWORD_RECOVERY_REDIRECT_URL || process.env.EMAIL_VERIFICATION_REDIRECT_URL || undefined;
+      const { error } = await supabaseAuth.auth.resetPasswordForEmail(parsed.data.email, { redirectTo });
+      if (error) {
+        if (isRateLimitError(error)) return response.status(429).json({ error: passwordRecoveryRateLimitMessage });
+        console.error("Password recovery email failed:", String(error?.code || "provider_error").slice(0, 80));
+        return response.status(502).json({ error: "Unable to send password recovery instructions right now. Try again later." });
+      }
+      return response.status(200).json({ message: passwordRecoveryAcceptedMessage });
+    } catch (error) {
+      console.error("Password recovery request failed:", String(error?.code || "request_error").slice(0, 80));
+      if (error?.code === "ER_NO_SUCH_TABLE") return response.status(503).json({ error: "Password recovery is being configured. Please try again shortly." });
+      return response.status(500).json({ error: "Unable to process the password recovery request." });
+    }
+  });
+
+  router.post("/reset-password", async (request, response) => {
+    const parsed = z.object({
+      token_hash: z.string().min(16).max(2048).optional(),
+      access_token: z.string().min(16).max(4096).optional(),
+      password: passwordSchema
+    }).strict().refine(data => Boolean(data.token_hash || data.access_token), { message: "A recovery link is required." }).safeParse(request.body);
+    if (!parsed.success) return response.status(400).json({ error: parsed.error.issues[0]?.message || "Enter a valid password recovery request." });
+    if (authMode === "local" || !supabaseAuth || !supabaseAdmin) return response.status(503).json({ error: "Password recovery is not configured." });
+
+    try {
+      let providerUser;
+      if (parsed.data.token_hash) {
+        const verification = await supabaseAuth.auth.verifyOtp({ token_hash: parsed.data.token_hash, type: "recovery" });
+        if (verification.error || !verification.data.user?.id || !verification.data.user?.email) return response.status(400).json({ error: "This recovery link is invalid or expired. Request a new password reset email." });
+        providerUser = verification.data.user;
+      } else {
+        const { data, error } = await supabaseAdmin.auth.getUser(parsed.data.access_token);
+        if (error || !data.user?.id || !data.user?.email) return response.status(400).json({ error: "This recovery link is invalid or expired. Request a new password reset email." });
+        providerUser = data.user;
+      }
+
+      const normalizedEmail = normalizeEmail(providerUser.email);
+      const [rows] = await pool.execute(
+        "SELECT id,supabase_auth_id FROM users WHERE email_normalized=? AND supabase_auth_id=? LIMIT 1",
+        [normalizedEmail, providerUser.id]
+      );
+      if (!rows.length) return response.status(400).json({ error: "This link is not for a ShedShare email-and-password account. Use the original sign-in method or request a new link." });
+
+      const passwordHash = await bcrypt.hash(parsed.data.password, 12);
+      const { error: providerError } = await supabaseAdmin.auth.admin.updateUserById(providerUser.id, { password: parsed.data.password });
+      if (providerError) {
+        console.error("Supabase password update failed:", String(providerError?.code || "provider_error").slice(0, 80));
+        return response.status(502).json({ error: "Unable to update the password. Request a new recovery link and try again." });
+      }
+      const [result] = await pool.execute(
+        "UPDATE users SET password_hash=? WHERE id=? AND supabase_auth_id=?",
+        [passwordHash, rows[0].id, providerUser.id]
+      );
+      if (result.affectedRows !== 1) {
+        console.error("Password reset provider/database sync failed for user id:", String(rows[0].id));
+        return response.status(503).json({ error: "The password provider updated, but ShedShare could not finish syncing the account. Contact support before trying to sign in." });
+      }
+      return response.status(200).json({ message: "Your password has been updated. Sign in with your email and new password." });
+    } catch (error) {
+      console.error("Password reset failed:", String(error?.code || "request_error").slice(0, 80));
+      return response.status(500).json({ error: "Unable to reset the password. Request a new recovery link and try again." });
     }
   });
 

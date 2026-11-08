@@ -13,11 +13,11 @@ function rateLimitHash(secret, scope, value) {
   return crypto.createHmac("sha256", secret).update(`${scope}:${String(value || "unknown")}`).digest("hex");
 }
 
-async function reserveRateLimit(pool, { secret, ip, email, windowMinutes = 15, emailLimit = 3, ipLimit = 10 }) {
+async function reserveRateLimit(pool, { secret, ip, email, windowMinutes = 15, emailLimit = 3, ipLimit = 10, purpose = "verification" }) {
   if (!secret) throw new Error("A server secret is required for email verification rate limiting.");
   const buckets = [
-    { scope: "email", hash: rateLimitHash(secret, "verification-email", normalizeEmail(email)), limit: emailLimit },
-    { scope: "ip", hash: rateLimitHash(secret, "verification-ip", ip || "unknown"), limit: ipLimit }
+    { scope: "email", hash: rateLimitHash(secret, `${purpose}-email`, normalizeEmail(email)), limit: emailLimit },
+    { scope: "ip", hash: rateLimitHash(secret, `${purpose}-ip`, ip || "unknown"), limit: ipLimit }
   ].sort((a, b) => `${a.scope}:${a.hash}`.localeCompare(`${b.scope}:${b.hash}`));
   const connection = await pool.getConnection();
   try {

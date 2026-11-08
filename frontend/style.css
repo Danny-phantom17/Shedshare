@@ -152,6 +152,8 @@ button.back{padding:0 0 1rem;border:0;background:none;color:var(--accent);font:6
 .field-icon .ic{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .forgot-link{display:block;width:100%;margin:0 0 .9rem;padding:0;border:0;background:none;color:var(--ink-dim);font:400 .8rem var(--sans);cursor:pointer}
 .forgot-link:hover{color:var(--accent)}
+.auth-recovery-copy{margin:.2rem 0 1rem;text-align:center;line-height:1.6}
+.auth-back-link{display:block;margin:.9rem auto 0}
 .auth-submit{border-radius:999px!important}
 .social-divider{display:flex;align-items:center;gap:.7rem;margin:1.2rem 0 .9rem;color:var(--ink-dim);font-size:.78rem}
 .social-divider::before,.social-divider::after{content:"";flex:1;height:1px;background:var(--line)}

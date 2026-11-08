@@ -45,9 +45,36 @@
         <h3 class="auth-form-title">Login</h3>
         <div class="auth-field"><input type="email" id="li-email" required placeholder="Email" aria-label="Email"><span class="field-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></span></div>
         <div class="auth-field"><input type="password" id="li-pass" required placeholder="Password" aria-label="Password"><span class="field-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg></span></div>
+        <button type="button" class="forgot-link" id="forgotPassword">Forgot password?</button>
         <button type="button" class="forgot-link" id="resendVerification">Resend verification email</button>
         <button class="primary auth-submit" type="submit">Login</button>
       </form>
+      <form id="forgotPasswordForm" class="authForm" hidden>
+        <h3 class="auth-form-title">Reset your password</h3>
+        <p class="fine auth-recovery-copy">Enter your account email. If it uses an email and password, we’ll send a recovery link. Google accounts should use Continue with Google.</p>
+        <div class="auth-field"><input type="email" id="recoveryEmail" required placeholder="Email" aria-label="Email for password recovery" autocomplete="email"><span class="field-icon" aria-hidden="true">@</span></div>
+        <button class="primary auth-submit" type="submit">Send recovery email</button>
+        <button type="button" class="text-link auth-back-link" id="forgotPasswordBack">Back to sign in</button>
+      </form>
+      <section id="passwordRecoverySent" class="email-verification-status" role="status" aria-live="polite" hidden>
+        <p id="passwordRecoveryMessage">If an email-and-password account matches, recovery instructions have been sent. Check your inbox and spam folder.</p>
+        <button type="button" class="text-link" id="passwordRecoverySentBack">Back to sign in</button>
+      </section>
+      <form id="resetPasswordForm" class="authForm" hidden>
+        <h3 class="auth-form-title">Choose a new password</h3>
+        <p class="fine auth-recovery-copy">Enter a new password for your ShedShare account.</p>
+        <div class="auth-field"><input type="password" id="newPassword" required minlength="8" maxlength="72" placeholder="New password" aria-label="New password" autocomplete="new-password"><span class="field-icon" aria-hidden="true">●</span></div>
+        <div class="auth-field"><input type="password" id="confirmNewPassword" required minlength="8" maxlength="72" placeholder="Confirm new password" aria-label="Confirm new password" autocomplete="new-password"><span class="field-icon" aria-hidden="true">●</span></div>
+        <button class="primary auth-submit" type="submit">Update password</button>
+      </form>
+      <section id="passwordRecoveryDone" class="email-verification-status" role="status" aria-live="polite" hidden>
+        <p id="passwordRecoveryDoneMessage">Your password has been updated. Sign in with your email and new password.</p>
+        <button type="button" class="text-link" id="passwordRecoveryDoneBack">Back to sign in</button>
+      </section>
+      <section id="passwordRecoveryError" class="email-verification-status" role="alert" aria-live="assertive" hidden>
+        <p id="passwordRecoveryErrorMessage">This password recovery link is invalid or expired. Request a new one.</p>
+        <button type="button" class="text-link" id="passwordRecoveryErrorBack">Back to sign in</button>
+      </section>
       <form id="signupForm" class="authForm" hidden>
         <h3 class="auth-form-title">Create account</h3>
         <div class="auth-field"><input type="text" id="su-name" required placeholder="Full name" aria-label="Full name"><span class="field-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></span></div>
